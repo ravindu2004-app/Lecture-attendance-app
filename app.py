@@ -155,6 +155,21 @@ st.markdown("""
     border: 1px solid rgba(255, 255, 255, 0.1);
     margin-bottom: 10px;
 }
+
+/* Mobile touch fix for Streamlit time inputs.
+   This does not change the visual layout; it only keeps the native
+   time input and its picker indicator touch-enabled on mobile browsers. */
+input[type="time"] {
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
+    -webkit-appearance: auto !important;
+}
+
+input[type="time"]::-webkit-calendar-picker-indicator {
+    pointer-events: auto !important;
+    opacity: 1 !important;
+    cursor: pointer;
+}
 </style>
 """, unsafe_allow_html=True)
 
