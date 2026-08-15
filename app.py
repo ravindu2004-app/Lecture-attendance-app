@@ -7,7 +7,7 @@ import sqlite3
 import json
 
 # ---------------------------------------------------------
-# 0. DATABASE CONNECTION & INITIALIZATION (FIXED SINGLETON)
+# 0. ROBUST DATABASE CONNECTION & INITIALIZATION
 # ---------------------------------------------------------
 def get_db_conn():
     if 'db_conn' not in st.session_state:
@@ -15,37 +15,41 @@ def get_db_conn():
     return st.session_state.db_conn
 
 def init_db():
-    conn = get_db_conn()
-    c = conn.cursor()
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            username TEXT PRIMARY KEY,
-            name TEXT,
-            phone TEXT,
-            password TEXT
-        )
-    ''')
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS user_configs (
-            username TEXT,
-            term_key TEXT,
-            config_json TEXT,
-            PRIMARY KEY (username, term_key)
-        )
-    ''')
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS absent_records (
-            username TEXT,
-            term_key TEXT,
-            record_key TEXT,
-            PRIMARY KEY (username, term_key, record_key)
-        )
-    ''')
-    conn.commit()
+    try:
+        conn = get_db_conn()
+        c = conn.cursor()
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                username TEXT PRIMARY KEY,
+                name TEXT,
+                phone TEXT,
+                password TEXT
+            )
+        ''')
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS user_configs (
+                username TEXT,
+                term_key TEXT,
+                config_json TEXT,
+                PRIMARY KEY (username, term_key)
+            )
+        ''')
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS absent_records (
+                username TEXT,
+                term_key TEXT,
+                record_key TEXT,
+                PRIMARY KEY (username, term_key, record_key)
+            )
+        ''')
+        conn.commit()
+    except Exception as e:
+        st.error(f"Database Initialization Error: {e}")
 
 init_db()
 
 def register_user_db(username, name, phone, password):
+    init_db()
     conn = get_db_conn()
     c = conn.cursor()
     clean_u = username.strip().lower()
@@ -57,6 +61,7 @@ def register_user_db(username, name, phone, password):
         return False
 
 def check_login_db(username, password):
+    init_db()
     conn = get_db_conn()
     c = conn.cursor()
     clean_u = username.strip().lower()
@@ -65,30 +70,35 @@ def check_login_db(username, password):
     return user[0] if user else None
 
 def load_user_config_db(username, term_key):
+    init_db()
     conn = get_db_conn()
     c = conn.cursor()
     clean_u = username.strip().lower()
-    c.execute("SELECT config_json FROM user_configs WHERE username=? AND term_key=?", (clean_u, term_key))
-    row = c.fetchone()
-    
-    if row:
-        data = json.loads(row[0])
-        data["start_date"] = datetime.datetime.strptime(data["start_date"], "%Y-%m-%d").date()
-        data["end_date"] = datetime.datetime.strptime(data["end_date"], "%Y-%m-%d").date()
+    try:
+        c.execute("SELECT config_json FROM user_configs WHERE username=? AND term_key=?", (clean_u, term_key))
+        row = c.fetchone()
         
-        for day in data["custom_timetable"]:
-            for session in data["custom_timetable"][day]:
-                session["start_time"] = datetime.datetime.strptime(session["start_time"], "%H:%M:%S").time()
-                session["end_time"] = datetime.datetime.strptime(session["end_time"], "%H:%M:%S").time()
-                
-        for ext in data.get("extra_lectures", []):
-            ext["start_time"] = datetime.datetime.strptime(ext["start_time"], "%H:%M:%S").time()
-            ext["end_time"] = datetime.datetime.strptime(ext["end_time"], "%H:%M:%S").time()
+        if row:
+            data = json.loads(row[0])
+            data["start_date"] = datetime.datetime.strptime(data["start_date"], "%Y-%m-%d").date()
+            data["end_date"] = datetime.datetime.strptime(data["end_date"], "%Y-%m-%d").date()
             
-        return data
+            for day in data.get("custom_timetable", {}):
+                for session in data["custom_timetable"][day]:
+                    session["start_time"] = datetime.datetime.strptime(session["start_time"], "%H:%M:%S").time()
+                    session["end_time"] = datetime.datetime.strptime(session["end_time"], "%H:%M:%S").time()
+                    
+            for ext in data.get("extra_lectures", []):
+                ext["start_time"] = datetime.datetime.strptime(ext["start_time"], "%H:%M:%S").time()
+                ext["end_time"] = datetime.datetime.strptime(ext["end_time"], "%H:%M:%S").time()
+                
+            return data
+    except Exception:
+        pass
     return None
 
 def save_user_config_db(username, term_key, config):
+    init_db()
     conn = get_db_conn()
     c = conn.cursor()
     clean_u = username.strip().lower()
@@ -97,14 +107,19 @@ def save_user_config_db(username, term_key, config):
     conn.commit()
 
 def load_absents_db(username, term_key):
+    init_db()
     conn = get_db_conn()
     c = conn.cursor()
     clean_u = username.strip().lower()
-    c.execute("SELECT record_key FROM absent_records WHERE username=? AND term_key=?", (clean_u, term_key))
-    rows = c.fetchall()
-    return set(r[0] for r in rows)
+    try:
+        c.execute("SELECT record_key FROM absent_records WHERE username=? AND term_key=?", (clean_u, term_key))
+        rows = c.fetchall()
+        return set(r[0] for r in rows)
+    except Exception:
+        return set()
 
 def save_absents_db(username, term_key, absent_set):
+    init_db()
     conn = get_db_conn()
     c = conn.cursor()
     clean_u = username.strip().lower()
@@ -127,12 +142,25 @@ def mobile_time_picker(label, key_prefix, default_time=datetime.time(9, 0)):
     ampm_list = ["AM", "PM"]
     default_ampm = "PM" if default_time.hour >= 12 else "AM"
     
+    try:
+        h_idx = hours.index(f"{default_h12:02d}")
+    except ValueError:
+        h_idx = 0
+    try:
+        m_idx = minutes.index(f"{default_time.minute:02d}")
+    except ValueError:
+        m_idx = 0
+    try:
+        ap_idx = ampm_list.index(default_ampm)
+    except ValueError:
+        ap_idx = 0
+
     with c1:
-        selected_h = st.selectbox("Hour", hours, index=hours.index(f"{default_h12:02d}"), key=f"{key_prefix}_h")
+        selected_h = st.selectbox("Hour", hours, index=h_idx, key=f"{key_prefix}_h")
     with c2:
-        selected_m = st.selectbox("Min", minutes, index=minutes.index(f"{default_time.minute:02d}"), key=f"{key_prefix}_m")
+        selected_m = st.selectbox("Min", minutes, index=m_idx, key=f"{key_prefix}_m")
     with c3:
-        selected_ampm = st.selectbox("Format", ampm_list, index=ampm_list.index(default_ampm), key=f"{key_prefix}_ap")
+        selected_ampm = st.selectbox("Format", ampm_list, index=ap_idx, key=f"{key_prefix}_ap")
     
     h24 = int(selected_h)
     if selected_ampm == "PM" and h24 != 12:
@@ -355,6 +383,10 @@ if 'selected_year' not in st.session_state: st.session_state['selected_year'] = 
 if 'selected_semester' not in st.session_state: st.session_state['selected_semester'] = "Semester 1"
 if 'nav_mode' not in st.session_state: st.session_state['nav_mode'] = "🎓 Daily Attendance"
 
+# Cookie-like persistence simulation for remember me via session state initialization
+if 'remember_user' not in st.session_state: st.session_state['remember_user'] = ""
+if 'remember_pass' not in st.session_state: st.session_state['remember_pass'] = ""
+
 # ---------------------------------------------------------
 # 3. STATS CALCULATIONS & DIALOGS
 # ---------------------------------------------------------
@@ -416,7 +448,10 @@ def get_absence_details(rec_key, cfg):
     if len(parts) >= 3:
         date_str = parts[0]
         subj = parts[1]
-        idx = int(parts[2])
+        try:
+            idx = int(parts[2])
+        except ValueError:
+            idx = 0
         
         date_obj = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
         day_name = date_obj.strftime("%A")
@@ -540,7 +575,7 @@ def main_app():
         ''', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # LOAD TERM-SPECIFIC DATA
+    # LOAD TERM-SPECIFIC DATA SAFELY
     if 'cfg' not in st.session_state:
         loaded_cfg = load_user_config_db(username, term_key)
         if loaded_cfg:
@@ -867,7 +902,7 @@ def main_app():
     st.markdown('<div class="app-footer">© 2026 Academic Portal & Multi-Semester Tracker. All rights reserved.</div>', unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# 5. AUTHENTICATION ENTRY POINT
+# 5. AUTHENTICATION ENTRY POINT (WITH "REMEMBER ME")
 # ---------------------------------------------------------
 if not st.session_state['logged_in']:
     st.markdown("<br>", unsafe_allow_html=True)
@@ -887,8 +922,9 @@ if not st.session_state['logged_in']:
 
         if auth_choice == "Login":
             with st.form("login_form"):
-                u_input = st.text_input("Username", placeholder="Enter your username")
-                p_input = st.text_input("Password", type="password", placeholder="Enter your password")
+                u_input = st.text_input("Username", value=st.session_state['remember_user'], placeholder="Enter your username")
+                p_input = st.text_input("Password", value=st.session_state['remember_pass'], type="password", placeholder="Enter your password")
+                remember_me = st.checkbox("Remember Me", value=bool(st.session_state['remember_user']))
                 submit_login = st.form_submit_button("Sign In to Portal", type="primary", use_container_width=True)
 
             if submit_login:
@@ -898,6 +934,12 @@ if not st.session_state['logged_in']:
                         st.session_state['logged_in'] = True
                         st.session_state['current_user'] = name
                         st.session_state['current_username'] = u_input.strip().lower()
+                        if remember_me:
+                            st.session_state['remember_user'] = u_input.strip().lower()
+                            st.session_state['remember_pass'] = p_input
+                        else:
+                            st.session_state['remember_user'] = ""
+                            st.session_state['remember_pass'] = ""
                         st.success(f"Welcome back, {name}!")
                         time.sleep(0.5)
                         st.rerun()
