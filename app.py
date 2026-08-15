@@ -96,7 +96,6 @@ def load_user_config_db(username):
         except Exception:
             data = {}
             
-        # Ensure robust key presence to completely avoid KeyErrors
         if "custom_timetables" not in data:
             old_timetable = data.get("custom_timetable", default_timetable)
             old_subjects = data.get("subjects_pool", sorted(list(set(l["subject"] for day in old_timetable for l in old_timetable[day]))))
@@ -111,7 +110,6 @@ def load_user_config_db(username):
                            "Semester 2": {"start_date": data.get("start_date", datetime.date.today()), "end_date": data.get("end_date", datetime.date.today() + datetime.timedelta(days=120)), "subjects": [], "timetable": dict(default_timetable)}}
             }
         
-        # Verify years & semesters exist
         for yr in ["Year 1", "Year 2", "Year 3", "Year 4"]:
             if yr not in data["custom_timetables"]:
                 data["custom_timetables"][yr] = {"Semester 1": dict(default_sem_structure), "Semester 2": dict(default_sem_structure)}
@@ -128,7 +126,6 @@ def load_user_config_db(username):
         if "selected_semester" not in data or data["selected_semester"] not in data["custom_timetables"][data["selected_year"]]:
             data["selected_semester"] = "Semester 1"
 
-        # Parse dates and times
         for yr in data["custom_timetables"]:
             for sem in data["custom_timetables"][yr]:
                 sem_data = data["custom_timetables"][yr][sem]
@@ -942,88 +939,99 @@ def main_app():
             </div>
         ''', unsafe_allow_html=True)
 
+        sem_start = sem_data.get("start_date")
+        sem_end = sem_data.get("end_date")
+
         sel_date = st.date_input("Select Attendance Date:", value=datetime.date.today(), key="daily_att_date")
         d_str = sel_date.strftime("%Y-%m-%d")
         d_name = sel_date.strftime("%A")
 
-        is_holiday = d_str in HOLIDAYS_DB
-        is_mid = d_str in sem_data.get("mid_exam_dates", [])
-
-        if is_holiday:
+        if sem_start and sem_end and not (sem_start <= sel_date <= sem_end):
             st.markdown(f'''
-                <div class="holiday-card">
-                    <h2>🎉 Holiday Today!</h2>
-                    <p style="margin:0; font-size:15px;">{HOLIDAYS_DB[d_str]}</p>
-                </div>
-            ''', unsafe_allow_html=True)
-        elif is_mid:
-            st.markdown(f'''
-                <div class="exam-card">
-                    <h2>📝 Mid-Examination Period</h2>
-                    <p style="margin:0; font-size:15px;">No regular lectures scheduled during examination days.</p>
+                <div class="exam-card" style="background: linear-gradient(135deg, #334155 100%, #1e293b 100%); border-left: 5px solid #64748b;">
+                    <h2>⌛ Semester Ended / Not Started</h2>
+                    <p style="margin:0; font-size:15px;">Selected date (`{d_str}`) falls outside the active semester timeline (`{sem_start}` to `{sem_end}`). Semester is over or has not yet begun for this date range!</p>
                 </div>
             ''', unsafe_allow_html=True)
         else:
-            regular_slots = sem_data["timetable"].get(d_name, [])
-            cancelled_today = [c["subject"] for c in cfg.get("cancelled_lectures", []) if c["date"] == d_str]
-            
-            active_slots = []
-            for slot in regular_slots:
-                if slot["subject"] not in cancelled_today:
-                    active_slots.append(slot)
-                    
-            for ext in cfg.get("extra_lectures", []):
-                if ext.get("year") == cfg.get("selected_year") and ext.get("semester") == cfg.get("selected_semester"):
-                    if ext["date"] == d_str:
-                        active_slots.append(ext)
+            is_holiday = d_str in HOLIDAYS_DB
+            is_mid = d_str in sem_data.get("mid_exam_dates", [])
 
-            if not active_slots:
-                st.info(f"No lectures scheduled for {d_name} ({d_str}).")
+            if is_holiday:
+                st.markdown(f'''
+                    <div class="holiday-card">
+                        <h2>🎉 Holiday Today!</h2>
+                        <p style="margin:0; font-size:15px;">{HOLIDAYS_DB[d_str]}</p>
+                    </div>
+                ''', unsafe_allow_html=True)
+            elif is_mid:
+                st.markdown(f'''
+                    <div class="exam-card">
+                        <h2>📝 Mid-Examination Period</h2>
+                        <p style="margin:0; font-size:15px;">No regular lectures scheduled during examination days.</p>
+                    </div>
+                ''', unsafe_allow_html=True)
             else:
-                st.markdown(f"### 📋 Lectures for {d_name} ({d_str})")
+                regular_slots = sem_data["timetable"].get(d_name, [])
+                cancelled_today = [c["subject"] for c in cfg.get("cancelled_lectures", []) if c["date"] == d_str]
                 
-                subj_occurrence_counts = {}
-                
-                for idx, slot in enumerate(active_slots):
-                    subj = slot["subject"]
-                    subj_occurrence_counts[subj] = subj_occurrence_counts.get(subj, 0) + 1
-                    slot_index_in_subj = subj_occurrence_counts[subj] - 1
+                active_slots = []
+                for slot in regular_slots:
+                    if slot["subject"] not in cancelled_today:
+                        active_slots.append(slot)
+                        
+                for ext in cfg.get("extra_lectures", []):
+                    if ext.get("year") == cfg.get("selected_year") and ext.get("semester") == cfg.get("selected_semester"):
+                        if ext["date"] == d_str:
+                            active_slots.append(ext)
+
+                if not active_slots:
+                    st.info(f"No lectures scheduled for {d_name} ({d_str}).")
+                else:
+                    st.markdown(f"### 📋 Lectures for {d_name} ({d_str})")
                     
-                    rec_key = f"{d_str}_{subj}_{slot_index_in_subj}"
-                    is_absent = rec_key in st.session_state['absent_records']
+                    subj_occurrence_counts = {}
                     
-                    st_t = slot["start_time"].strftime("%I:%M %p") if isinstance(slot["start_time"], datetime.time) else "09:00 AM"
-                    end_t = slot["end_time"].strftime("%I:%M %p") if isinstance(slot["end_time"], datetime.time) else "11:00 AM"
-                    
-                    is_tute = is_tutorial_subject(subj)
-                    card_class = "subject-card-tute" if is_tute else "subject-card-main"
-                    
-                    st.markdown(f'''
-                        <div class="{card_class}">
-                            <div class="card-header-flex">
-                                <h3 class="subject-title">📚 {subj}</h3>
-                                {'<span class="badge-red">ABSENT</span>' if is_absent else '<span class="badge-green">ATTENDED</span>'}
-                            </div>
-                            <p style="color: #cbd5e1; margin: 0 0 10px 0; font-size: 14px;">⏰ <b>Time:</b> {st_t} - {end_t}</p>
-                    ''', unsafe_allow_html=True)
-                    
-                    c_btn1, c_btn2, c_btn3 = st.columns([2, 2, 2])
-                    with c_btn1:
-                        if is_absent:
-                            if st.button("✅ Mark Present", key=f"pres_{rec_key}", type="primary"):
-                                st.session_state['absent_records'].discard(rec_key)
-                                save_absents_db(username, st.session_state['absent_records'])
-                                st.rerun()
-                        else:
-                            if st.button("❌ Mark Absent", key=f"abs_{rec_key}"):
-                                st.session_state['absent_records'].add(rec_key)
-                                save_absents_db(username, st.session_state['absent_records'])
-                                st.rerun()
-                    with c_btn2:
-                        if st.button("📊 View Stats & History", key=f"modal_btn_{rec_key}"):
-                            open_subject_modal(subj, cfg, username)
-                            
-                    st.markdown('</div>', unsafe_allow_html=True)
+                    for idx, slot in enumerate(active_slots):
+                        subj = slot["subject"]
+                        subj_occurrence_counts[subj] = subj_occurrence_counts.get(subj, 0) + 1
+                        slot_index_in_subj = subj_occurrence_counts[subj] - 1
+                        
+                        rec_key = f"{d_str}_{subj}_{slot_index_in_subj}"
+                        is_absent = rec_key in st.session_state['absent_records']
+                        
+                        st_t = slot["start_time"].strftime("%I:%M %p") if isinstance(slot["start_time"], datetime.time) else "09:00 AM"
+                        end_t = slot["end_time"].strftime("%I:%M %p") if isinstance(slot["end_time"], datetime.time) else "11:00 AM"
+                        
+                        is_tute = is_tutorial_subject(subj)
+                        card_class = "subject-card-tute" if is_tute else "subject-card-main"
+                        
+                        st.markdown(f'''
+                            <div class="{card_class}">
+                                <div class="card-header-flex">
+                                    <h3 class="subject-title">📚 {subj}</h3>
+                                    {'<span class="badge-red">ABSENT</span>' if is_absent else '<span class="badge-green">ATTENDED</span>'}
+                                </div>
+                                <p style="color: #cbd5e1; margin: 0 0 10px 0; font-size: 14px;">⏰ <b>Time:</b> {st_t} - {end_t}</p>
+                        ''', unsafe_allow_html=True)
+                        
+                        c_btn1, c_btn2, c_btn3 = st.columns([2, 2, 2])
+                        with c_btn1:
+                            if is_absent:
+                                if st.button("✅ Mark Present", key=f"pres_{rec_key}", type="primary"):
+                                    st.session_state['absent_records'].discard(rec_key)
+                                    save_absents_db(username, st.session_state['absent_records'])
+                                    st.rerun()
+                            else:
+                                if st.button("❌ Mark Absent", key=f"abs_{rec_key}"):
+                                    st.session_state['absent_records'].add(rec_key)
+                                    save_absents_db(username, st.session_state['absent_records'])
+                                    st.rerun()
+                        with c_btn2:
+                            if st.button("📊 View Stats & History", key=f"modal_btn_{rec_key}"):
+                                open_subject_modal(subj, cfg, username)
+                                
+                        st.markdown('</div>', unsafe_allow_html=True)
 
 # ---------------------------------------------------------
 # 5. AUTHENTICATION UI & ENTRYPOINT
