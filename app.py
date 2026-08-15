@@ -141,7 +141,7 @@ def mobile_time_picker(label, key_prefix, default_time=datetime.time(9, 0)):
     return datetime.time(h24, int(selected_m))
 
 # ---------------------------------------------------------
-# 1. PAGE CONFIGURATION & RE-THEMED MODERN UI STYLING
+# 1. PAGE CONFIGURATION & FULLY RESPONSIVE UI STYLING
 # ---------------------------------------------------------
 st.set_page_config(page_title="Academic Portal & Attendance Tracker", page_icon="🎓", layout="wide")
 
@@ -258,48 +258,81 @@ div.stButton > button[kind="primary"]:hover {
     letter-spacing: -0.5px;
 }
 
-/* QUICK INSIGHTS WIDGET (REPLACING THE BLANK CONTAINER) */
+/* FULLY RESPONSIVE QUICK INSIGHTS WIDGET */
 .insights-banner {
     background: linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.8) 100%);
     border: 1px solid rgba(56, 189, 248, 0.2);
     border-radius: 16px;
-    padding: 16px 24px;
+    padding: 16px 20px;
     margin-bottom: 24px;
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
     align-items: center;
     backdrop-filter: blur(12px);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
     animation: fadeInUp 0.45s ease-out;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .insight-item {
     display: flex;
     align-items: center;
     gap: 12px;
+    min-width: 0;
 }
 
 .insight-icon {
-    font-size: 22px;
+    font-size: 20px;
     background: rgba(56, 189, 248, 0.1);
     padding: 10px;
     border-radius: 12px;
     color: #38bdf8;
     border: 1px solid rgba(56, 189, 248, 0.2);
+    flex-shrink: 0;
+}
+
+.insight-content {
+    min-width: 0;
+    overflow: hidden;
 }
 
 .insight-label {
-    font-size: 11px;
+    font-size: 10px;
     color: #94a3b8;
     text-transform: uppercase;
     font-weight: 600;
     letter-spacing: 0.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .insight-val {
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 700;
     color: #f8fafc;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* MOBILE RESPONSIVE MEDIA QUERY */
+@media (max-width: 768px) {
+    .insights-banner {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        padding: 14px 16px;
+    }
+    
+    .insight-item {
+        width: 100%;
+        background: rgba(255, 255, 255, 0.02);
+        padding: 8px 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.04);
+    }
 }
 
 /* CARDS & SUBJECT MODULES */
@@ -636,7 +669,7 @@ def open_subject_modal(subj, cfg, username):
             st.markdown('</div>', unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# 4. MAIN DASHBOARD & APPLICATION LOGIC (UNCHANGED)
+# 4. MAIN DASHBOARD & APPLICATION LOGIC
 # ---------------------------------------------------------
 def main_app():
     username = st.session_state['current_username']
@@ -878,26 +911,26 @@ def main_app():
         days_passed = (today_date - start_d_cfg).days
         curr_week = max(1, math.ceil(days_passed / 7)) if days_passed >= 0 else 1
 
-        # NEW ELEGANT QUICK INSIGHTS BANNER (REPLACING THE BLANK CONTAINER)
+        # MOBILE-OPTIMIZED & AUTO-ADJUSTING QUICK INSIGHTS BANNER
         st.markdown(f'''
             <div class="insights-banner">
                 <div class="insight-item">
                     <div class="insight-icon">📈</div>
-                    <div>
+                    <div class="insight-content">
                         <div class="insight-label">Overall Attendance</div>
                         <div class="insight-val">{overall_pct:.1f}%</div>
                     </div>
                 </div>
                 <div class="insight-item">
                     <div class="insight-icon">📅</div>
-                    <div>
+                    <div class="insight-content">
                         <div class="insight-label">Academic Progress</div>
                         <div class="insight-val">Week {curr_week}</div>
                     </div>
                 </div>
                 <div class="insight-item">
                     <div class="insight-icon">🛡️</div>
-                    <div>
+                    <div class="insight-content">
                         <div class="insight-label">Eligibility Status</div>
                         <div class="insight-val" style="color: {health_color};">{health_status}</div>
                     </div>
