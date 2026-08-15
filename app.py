@@ -141,7 +141,7 @@ def mobile_time_picker(label, key_prefix, default_time=datetime.time(9, 0)):
     return datetime.time(h24, int(selected_m))
 
 # ---------------------------------------------------------
-# 1. PAGE CONFIGURATION & HIGH-END ACADEMIC SYSTEM STYLING
+# 1. PAGE CONFIGURATION & RE-THEMED MODERN UI STYLING
 # ---------------------------------------------------------
 st.set_page_config(page_title="Academic Portal & Attendance Tracker", page_icon="🎓", layout="wide")
 
@@ -154,11 +154,11 @@ html, body, [class*="css"] {
 }
 
 .stApp {
-    background: #060913;
+    background: #0b0f19;
     background-image: 
-        radial-gradient(at 10% 10%, rgba(244, 63, 94, 0.12) 0px, transparent 50%),
-        radial-gradient(at 90% 90%, rgba(99, 102, 241, 0.12) 0px, transparent 50%),
-        radial-gradient(at 50% 50%, rgba(15, 23, 42, 0.6) 0px, transparent 100%);
+        radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.08) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(99, 102, 241, 0.12) 0px, transparent 50%),
+        radial-gradient(at 50% 100%, rgba(16, 185, 129, 0.06) 0px, transparent 50%);
     background-attachment: fixed;
 }
 
@@ -166,7 +166,7 @@ html, body, [class*="css"] {
 @keyframes fadeInUp {
     from {
         opacity: 0;
-        transform: translateY(20px) scale(0.98);
+        transform: translateY(16px) scale(0.99);
     }
     to {
         opacity: 1;
@@ -174,35 +174,35 @@ html, body, [class*="css"] {
     }
 }
 
-@keyframes pulseGlow {
-    0% { box-shadow: 0 0 20px rgba(244, 63, 94, 0.15); border-color: rgba(244, 63, 94, 0.25); }
-    50% { box-shadow: 0 0 35px rgba(244, 63, 94, 0.35); border-color: rgba(244, 63, 94, 0.5); }
-    100% { box-shadow: 0 0 20px rgba(244, 63, 94, 0.15); border-color: rgba(244, 63, 94, 0.25); }
+@keyframes pulseGlowBlue {
+    0% { box-shadow: 0 0 25px rgba(99, 102, 241, 0.15); border-color: rgba(99, 102, 241, 0.3); }
+    50% { box-shadow: 0 0 35px rgba(56, 189, 248, 0.25); border-color: rgba(56, 189, 248, 0.5); }
+    100% { box-shadow: 0 0 25px rgba(99, 102, 241, 0.15); border-color: rgba(99, 102, 241, 0.3); }
 }
 
-/* AUTHENTICATION ANIMATED ULTRA CARD */
+/* AUTHENTICATION ULTRA CARD */
 .auth-animated-card {
-    background: linear-gradient(165deg, rgba(17, 24, 39, 0.85) 0%, rgba(9, 14, 26, 0.95) 100%);
-    backdrop-filter: blur(30px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 28px;
+    background: linear-gradient(165deg, rgba(17, 24, 39, 0.85) 0%, rgba(13, 18, 30, 0.95) 100%);
+    backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 24px;
     padding: 38px 34px;
-    box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.85), inset 0 1px 1px rgba(255, 255, 255, 0.12);
-    animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+    animation: fadeInUp 0.5s ease-out forwards;
 }
 
 .auth-header-box {
-    background: linear-gradient(135deg, rgba(244, 63, 94, 0.12) 0%, rgba(99, 102, 241, 0.1) 100%);
-    border: 1px solid rgba(244, 63, 94, 0.3);
-    border-radius: 20px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(56, 189, 248, 0.1) 100%);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 18px;
     padding: 24px 20px;
     text-align: center;
     margin-bottom: 26px;
-    animation: pulseGlow 4s infinite ease-in-out;
+    animation: pulseGlowBlue 4s infinite ease-in-out;
 }
 
 .auth-header-title {
-    font-size: 28px;
+    font-size: 26px;
     font-weight: 800;
     background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
     -webkit-background-clip: text;
@@ -220,34 +220,94 @@ html, body, [class*="css"] {
     font-weight: 500;
 }
 
+/* PRIMARY BUTTONS RE-STYLED TO BLUE/INDIGO */
+div.stButton > button[kind="primary"] {
+    background: linear-gradient(135deg, #4f46e5 0%, #0284c7 100%) !important;
+    border: none !important;
+    color: white !important;
+    font-weight: 600 !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35) !important;
+    transition: all 0.2s ease-in-out !important;
+}
+
+div.stButton > button[kind="primary"]:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 20px rgba(56, 189, 248, 0.45) !important;
+}
+
 /* MAIN DASHBOARD HEADER */
 .dashboard-header {
-    background: linear-gradient(135deg, rgba(20, 29, 47, 0.75) 0%, rgba(10, 15, 26, 0.9) 100%);
+    background: linear-gradient(135deg, rgba(17, 24, 39, 0.8) 0%, rgba(15, 23, 42, 0.95) 100%);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 24px;
-    padding: 28px 36px;
-    margin-bottom: 25px;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    border-radius: 20px;
+    padding: 26px 32px;
+    margin-bottom: 18px;
+    box-shadow: 0 15px 30px rgba(0,0,0,0.4);
     backdrop-filter: blur(20px);
     animation: fadeInUp 0.4s ease-out;
 }
 
 .dashboard-title {
-    font-size: 32px !important;
+    font-size: 30px !important;
     font-weight: 800 !important;
-    background: linear-gradient(135deg, #f43f5e 0%, #fb7185 100%);
+    background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     margin: 0 !important;
     letter-spacing: -0.5px;
 }
 
-/* TRACKER & SUBJECT CARDS WITH ANIMATED HOVER */
+/* QUICK INSIGHTS WIDGET (REPLACING THE BLANK CONTAINER) */
+.insights-banner {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.8) 100%);
+    border: 1px solid rgba(56, 189, 248, 0.2);
+    border-radius: 16px;
+    padding: 16px 24px;
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+    animation: fadeInUp 0.45s ease-out;
+}
+
+.insight-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.insight-icon {
+    font-size: 22px;
+    background: rgba(56, 189, 248, 0.1);
+    padding: 10px;
+    border-radius: 12px;
+    color: #38bdf8;
+    border: 1px solid rgba(56, 189, 248, 0.2);
+}
+
+.insight-label {
+    font-size: 11px;
+    color: #94a3b8;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.insight-val {
+    font-size: 16px;
+    font-weight: 700;
+    color: #f8fafc;
+}
+
+/* CARDS & SUBJECT MODULES */
 .tracker-card {
-    background: linear-gradient(145deg, rgba(20, 27, 45, 0.65) 0%, rgba(11, 16, 28, 0.85) 100%);
+    background: linear-gradient(145deg, rgba(17, 24, 39, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 24px;
-    padding: 28px;
+    border-radius: 20px;
+    padding: 24px;
     margin-bottom: 24px;
     backdrop-filter: blur(16px);
     animation: fadeInUp 0.4s ease-out;
@@ -256,50 +316,49 @@ html, body, [class*="css"] {
 .lecture-item-box {
     background: rgba(255, 255, 255, 0.025);
     border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 18px;
-    padding: 18px 22px;
+    border-radius: 14px;
+    padding: 16px 20px;
     margin-bottom: 12px;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.2s ease-in-out;
 }
 
 .lecture-item-box:hover {
     transform: translateY(-2px);
-    border-color: rgba(244, 63, 94, 0.4);
-    background: rgba(255, 255, 255, 0.045);
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+    border-color: rgba(56, 189, 248, 0.35);
+    background: rgba(255, 255, 255, 0.04);
 }
 
 .subject-card-main, .subject-card-tute {
-    border-radius: 22px;
-    padding: 24px;
-    margin-bottom: 22px;
+    border-radius: 18px;
+    padding: 22px;
+    margin-bottom: 20px;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     backdrop-filter: blur(14px);
     animation: fadeInUp 0.5s ease-out;
 }
 
 .subject-card-main {
-    background: linear-gradient(145deg, rgba(26, 36, 56, 0.75) 0%, rgba(13, 19, 35, 0.9) 100%);
-    border: 1px solid rgba(244, 63, 94, 0.25);
-    box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.4);
+    background: linear-gradient(145deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
 }
 
 .subject-card-main:hover {
     transform: translateY(-3px);
-    border-color: rgba(244, 63, 94, 0.55);
-    box-shadow: 0 20px 40px -10px rgba(244, 63, 94, 0.25);
+    border-color: rgba(99, 102, 241, 0.55);
+    box-shadow: 0 15px 35px -10px rgba(99, 102, 241, 0.25);
 }
 
 .subject-card-tute {
-    background: linear-gradient(145deg, rgba(46, 16, 101, 0.55) 0%, rgba(15, 23, 42, 0.9) 100%);
+    background: linear-gradient(145deg, rgba(30, 27, 75, 0.65) 0%, rgba(15, 23, 42, 0.9) 100%);
     border: 1px solid rgba(168, 85, 247, 0.3);
-    box-shadow: 0 12px 30px -5px rgba(88, 28, 135, 0.25);
+    box-shadow: 0 10px 25px -5px rgba(88, 28, 135, 0.25);
 }
 
 .subject-card-tute:hover {
     transform: translateY(-3px);
     border-color: rgba(168, 85, 247, 0.65);
-    box-shadow: 0 20px 40px -10px rgba(168, 85, 247, 0.35);
+    box-shadow: 0 15px 35px -10px rgba(168, 85, 247, 0.35);
 }
 
 .card-header-flex {
@@ -310,103 +369,103 @@ html, body, [class*="css"] {
 }
 
 .subject-title {
-    font-size: 19px;
+    font-size: 18px;
     font-weight: 700;
     color: #f8fafc;
     margin: 0;
 }
 
 .badge-green {
-    background: rgba(34, 197, 94, 0.15);
-    color: #4ade80;
-    border: 1px solid rgba(34, 197, 94, 0.35);
-    padding: 5px 14px;
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.35);
+    padding: 4px 12px;
     border-radius: 20px;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 700;
 }
 
 .badge-red {
-    background: rgba(239, 68, 68, 0.15);
-    color: #f87171;
-    border: 1px solid rgba(239, 68, 68, 0.35);
-    padding: 5px 14px;
+    background: rgba(244, 63, 94, 0.15);
+    color: #fb7185;
+    border: 1px solid rgba(244, 63, 94, 0.35);
+    padding: 4px 12px;
     border-radius: 20px;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 700;
 }
 
 .metrics-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-    margin-top: 16px;
-    margin-bottom: 16px;
+    gap: 10px;
+    margin-top: 14px;
+    margin-bottom: 14px;
 }
 
 .metric-item {
     background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    padding: 12px 16px;
-    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 10px 14px;
+    border-radius: 12px;
 }
 
 .metric-label {
-    font-size: 11px;
+    font-size: 10px;
     color: #94a3b8;
     text-transform: uppercase;
-    letter-spacing: 0.6px;
-    margin-bottom: 4px;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
     font-weight: 600;
 }
 
 .metric-val {
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 700;
     color: #f1f5f9;
 }
 
 .holiday-card {
-    background: linear-gradient(135deg, #b45309 0%, #78350f 100%);
+    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
     color: white;
-    padding: 20px;
-    border-radius: 18px;
-    border-left: 6px solid #fbbf24;
-    margin-bottom: 20px;
+    padding: 18px;
+    border-radius: 16px;
+    border-left: 5px solid #38bdf8;
+    margin-bottom: 18px;
     animation: fadeInUp 0.4s ease-out;
 }
 
 .exam-card {
-    background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%);
+    background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
     color: white;
-    padding: 20px;
-    border-radius: 18px;
-    border-left: 6px solid #f87171;
-    margin-bottom: 20px;
+    padding: 18px;
+    border-radius: 16px;
+    border-left: 5px solid #818cf8;
+    margin-bottom: 18px;
     animation: fadeInUp 0.4s ease-out;
 }
 
 .stat-box {
     background: rgba(30, 41, 59, 0.4);
-    border-radius: 16px;
-    padding: 18px;
+    border-radius: 14px;
+    padding: 16px;
     border: 1px solid rgba(255, 255, 255, 0.07);
-    margin-bottom: 14px;
+    margin-bottom: 12px;
 }
 
 div[data-testid="stSidebar"] {
-    background: #060913 !important;
+    background: #080c14 !important;
     border-right: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .user-profile-box {
-    background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
-    padding: 20px;
-    border-radius: 18px;
+    background: linear-gradient(135deg, #4f46e5 0%, #0284c7 100%);
+    padding: 18px;
+    border-radius: 16px;
     color: white;
     text-align: center;
-    margin-bottom: 25px;
-    box-shadow: 0 10px 25px rgba(244, 63, 94, 0.35);
+    margin-bottom: 22px;
+    box-shadow: 0 8px 20px rgba(79, 70, 229, 0.3);
 }
 
 .nav-header {
@@ -801,6 +860,51 @@ def main_app():
             </div>
         ''', unsafe_allow_html=True)
         
+        # COMPUTING OVERALL ACADEMIC HEALTH FOR QUICK INSIGHTS WIDGET
+        all_subjects_calc = sorted(list(set(l["subject"] for day in cfg["custom_timetable"] for l in cfg["custom_timetable"][day])))
+        total_p_conducted = 0
+        total_attended_all = 0
+        for s_item in all_subjects_calc:
+            s_st = calculate_subject_stats(s_item, cfg, st.session_state['absent_records'])
+            total_p_conducted += s_st["past_conducted"]
+            total_attended_all += s_st["attended"]
+        
+        overall_pct = (total_attended_all / total_p_conducted * 100) if total_p_conducted > 0 else 100.0
+        health_status = "Good Standing" if overall_pct >= 80.0 else "Action Required"
+        health_color = "#34d399" if overall_pct >= 80.0 else "#fb7185"
+
+        today_date = datetime.date.today()
+        start_d_cfg = cfg.get("start_date", today_date)
+        days_passed = (today_date - start_d_cfg).days
+        curr_week = max(1, math.ceil(days_passed / 7)) if days_passed >= 0 else 1
+
+        # NEW ELEGANT QUICK INSIGHTS BANNER (REPLACING THE BLANK CONTAINER)
+        st.markdown(f'''
+            <div class="insights-banner">
+                <div class="insight-item">
+                    <div class="insight-icon">📈</div>
+                    <div>
+                        <div class="insight-label">Overall Attendance</div>
+                        <div class="insight-val">{overall_pct:.1f}%</div>
+                    </div>
+                </div>
+                <div class="insight-item">
+                    <div class="insight-icon">📅</div>
+                    <div>
+                        <div class="insight-label">Academic Progress</div>
+                        <div class="insight-val">Week {curr_week}</div>
+                    </div>
+                </div>
+                <div class="insight-item">
+                    <div class="insight-icon">🛡️</div>
+                    <div>
+                        <div class="insight-label">Eligibility Status</div>
+                        <div class="insight-val" style="color: {health_color};">{health_status}</div>
+                    </div>
+                </div>
+            </div>
+        ''', unsafe_allow_html=True)
+
         col_main, col_stats = st.columns([2.2, 1.4])
 
         with col_main:
@@ -845,7 +949,7 @@ def main_app():
                     st.markdown('<div class="lecture-item-box">', unsafe_allow_html=True)
                     c_info, c_chk = st.columns([3, 1])
                     with c_info:
-                        st.markdown(f"<span style='font-size:16px; font-weight:700; color:#f8fafc;'>📖 {subj}</span><span style='color:#fb7185; font-weight:600;'>{extra_tag}</span>", unsafe_allow_html=True)
+                        st.markdown(f"<span style='font-size:16px; font-weight:700; color:#f8fafc;'>📖 {subj}</span><span style='color:#38bdf8; font-weight:600;'>{extra_tag}</span>", unsafe_allow_html=True)
                         st.markdown(f"<span style='font-size:13px; color:#94a3b8;'>⏰ {formatted_time}</span>", unsafe_allow_html=True)
                     with c_chk:
                         absent_marked = st.checkbox("Mark Absent", value=is_absent, key=f"chk_{record_key}", disabled=is_holiday or is_mid_exam)
@@ -895,7 +999,7 @@ def main_app():
                                 </div>
                                 <div class="metric-item">
                                     <div class="metric-label">Cuts / Absences</div>
-                                    <div class="metric-val" style="color:#f87171;">{stats["absences"]}</div>
+                                    <div class="metric-val" style="color:#fb7185;">{stats["absences"]}</div>
                                 </div>
                                 <div class="metric-item">
                                     <div class="metric-label">Max Allowed Cuts</div>
