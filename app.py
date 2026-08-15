@@ -163,22 +163,74 @@ html, body, [class*="css"] {
 }
 
 .dashboard-header {
-    background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 20px;
-    padding: 24px 30px;
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.8) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 24px;
+    padding: 28px 36px;
     margin-bottom: 25px;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    backdrop-filter: blur(16px);
 }
 
 .dashboard-title {
-    font-size: 32px !important;
+    font-size: 34px !important;
     font-weight: 800 !important;
     background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     margin: 0 !important;
     letter-spacing: -0.5px;
+}
+
+/* AUTHENTICATION PROFESSIONAL CARD */
+.auth-container {
+    background: linear-gradient(145deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.85) 100%);
+    backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 28px;
+    padding: 45px;
+    box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.6);
+}
+
+.auth-header-title {
+    font-size: 30px;
+    font-weight: 800;
+    text-align: center;
+    background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+}
+
+.auth-subtitle {
+    text-align: center;
+    color: #94a3b8;
+    font-size: 14px;
+    margin-bottom: 28px;
+}
+
+/* ATTENDANCE SECTION CARDS */
+.tracker-card {
+    background: linear-gradient(145deg, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.75) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    padding: 24px;
+    margin-bottom: 24px;
+    backdrop-filter: blur(12px);
+}
+
+.lecture-item-box {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 16px;
+    padding: 16px 20px;
+    margin-bottom: 12px;
+    transition: all 0.3s ease;
+}
+
+.lecture-item-box:hover {
+    border-color: rgba(96, 165, 250, 0.4);
+    background: rgba(255, 255, 255, 0.05);
 }
 
 /* CUSTOM MODERN SUBJECT CARD STYLES */
@@ -267,15 +319,6 @@ html, body, [class*="css"] {
     color: #e2e8f0;
 }
 
-.auth-card {
-    background: rgba(15, 23, 42, 0.65);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 24px;
-    padding: 40px;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-}
-
 .holiday-card {
     background: linear-gradient(135deg, #b45309 0%, #78350f 100%);
     color: white;
@@ -324,15 +367,6 @@ div[data-testid="stSidebar"] {
     color: #64748b;
     margin-bottom: 12px;
     font-weight: 700;
-}
-
-.footer-text {
-    text-align: center;
-    color: #64748b;
-    font-size: 13px;
-    padding: 30px 0 10px 0;
-    margin-top: 40px;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 </style>
 """, unsafe_allow_html=True)
@@ -717,20 +751,22 @@ def main_app():
             else:
                 st.info("No extra lectures scheduled.")
 
-    # NAVIGATION 1: DAILY ATTENDANCE & SUBJECT PROGRESS
+    # NAVIGATION 1: DAILY ATTENDANCE & SUBJECT PROGRESS (PROFESSIONAL REDESIGN)
     elif nav_mode == "🎓 Daily Attendance":
         st.markdown('''
             <div class="dashboard-header">
-                <h1 class="dashboard-title">🎓 Lecture Attendance Dashboard</h1>
-                <p style="color: #94a3b8; margin: 4px 0 0 0; font-size: 14px;">Track your daily attendance and ensure minimum 80% criteria per subject.</p>
+                <h1 class="dashboard-title">🎓 Attendance Tracker & Dashboard</h1>
+                <p style="color: #94a3b8; margin: 6px 0 0 0; font-size: 14px; font-weight: 500;">Monitor your daily lecture attendance and maintain minimum 80% criteria per subject effortlessly.</p>
             </div>
         ''', unsafe_allow_html=True)
         
         col_main, col_stats = st.columns([2.2, 1.4])
 
         with col_main:
-            st.subheader("📅 Daily Attendance Tracker")
-            selected_date = st.date_input("Choose Date:", value=datetime.date.today() if cfg["start_date"] <= datetime.date.today() <= cfg["end_date"] else cfg["start_date"], min_value=cfg["start_date"], max_value=cfg["end_date"])
+            st.markdown('<div class="tracker-card">', unsafe_allow_html=True)
+            st.markdown('<h3 style="margin-top:0; font-size:20px; font-weight:700; color:#f8fafc;">📅 Daily Attendance Tracker</h3>', unsafe_allow_html=True)
+            
+            selected_date = st.date_input("Select Attendance Date:", value=datetime.date.today() if cfg["start_date"] <= datetime.date.today() <= cfg["end_date"] else cfg["start_date"], min_value=cfg["start_date"], max_value=cfg["end_date"])
             selected_str = selected_date.strftime("%Y-%m-%d")
             day_name = selected_date.strftime("%A")
 
@@ -750,7 +786,7 @@ def main_app():
                 active_lectures.append({"subject": ext["subject"], "start_time": ext["start_time"], "end_time": ext["end_time"], "is_extra": True})
 
             if not active_lectures:
-                st.info("No lectures scheduled for this date!")
+                st.info("🎉 No lectures scheduled for this date!")
             else:
                 subj_counter = {}
                 for lec in active_lectures:
@@ -765,10 +801,11 @@ def main_app():
                     record_key = f"{selected_str}_{subj}_{subj_idx}"
                     is_absent = record_key in st.session_state['absent_records']
 
-                    st.markdown('<div class="stat-box">', unsafe_allow_html=True)
+                    st.markdown('<div class="lecture-item-box">', unsafe_allow_html=True)
                     c_info, c_chk = st.columns([3, 1])
                     with c_info:
-                        st.markdown(f"**📖 {subj}**{extra_tag}  \n`⏰ {formatted_time}`")
+                        st.markdown(f"<span style='font-size:16px; font-weight:700; color:#f8fafc;'>📖 {subj}</span><span style='color:#a78bfa; font-weight:600;'>{extra_tag}</span>", unsafe_allow_html=True)
+                        st.markdown(f"<span style='font-size:13px; color:#94a3b8;'>⏰ {formatted_time}</span>", unsafe_allow_html=True)
                     with c_chk:
                         absent_marked = st.checkbox("Mark Absent", value=is_absent, key=f"chk_{record_key}", disabled=is_holiday or is_mid_exam)
                         
@@ -780,6 +817,7 @@ def main_app():
                             save_absents_db(username, st.session_state['absent_records'])
                             st.rerun()
                     st.markdown('</div>', unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
 
         with col_stats:
             st.subheader("📊 Subject Progress & Stats")
@@ -795,148 +833,113 @@ def main_app():
                 def render_redesigned_subject_card(subj, is_tute=False):
                     stats = calculate_subject_stats(subj, cfg, st.session_state['absent_records'])
                     card_class = "subject-card-tute" if is_tute else "subject-card-main"
-                    badge_class = "badge-green" if stats['percentage'] >= 80 else "badge-red"
-                    icon = "📝" if is_tute else "📚"
+                    is_eligible = stats["percentage"] >= 80.0
+                    
+                    badge_html = f'<span class="badge-green">Eligible ({stats["percentage"]:.1f}%)</span>' if is_eligible else f'<span class="badge-red">At Risk ({stats["percentage"]:.1f}%)</span>'
+                    
+                    if stats["safe_left"] >= 0:
+                        status_msg = f"🟢 Safe to miss **{stats['safe_left']}** more lecture(s)."
+                    else:
+                        status_msg = f"🚨 Must attend **{abs(stats['safe_left'])}** future class(es) to recover!"
 
-                    # Card Header HTML
                     st.markdown(f'''
                         <div class="{card_class}">
                             <div class="card-header-flex">
-                                <h3 class="subject-title">{icon} {subj}</h3>
-                                <span class="{badge_class}">{stats['percentage']:.1f}%</span>
+                                <h3 class="subject-title">{subj}</h3>
+                                {badge_html}
                             </div>
                             <div class="metrics-grid">
                                 <div class="metric-item">
-                                    <div class="metric-label">Total Sessions</div>
-                                    <div class="metric-val">{stats['total']}</div>
+                                    <div class="metric-label">Conducted</div>
+                                    <div class="metric-val">{stats["attended"]} / {stats["past_conducted"]}</div>
                                 </div>
                                 <div class="metric-item">
-                                    <div class="metric-label">Attended</div>
-                                    <div class="metric-val">{stats['attended']} / {stats['past_conducted']}</div>
-                                </div>
-                                <div class="metric-item">
-                                    <div class="metric-label">Cuts / Absent</div>
-                                    <div class="metric-val">{stats['absences']}</div>
+                                    <div class="metric-label">Cuts / Absences</div>
+                                    <div class="metric-val" style="color:#f87171;">{stats["absences"]}</div>
                                 </div>
                                 <div class="metric-item">
                                     <div class="metric-label">Max Allowed Cuts</div>
-                                    <div class="metric-val">{stats['max_allowed']}</div>
+                                    <div class="metric-val">{stats["max_allowed"]}</div>
                                 </div>
+                                <div class="metric-item">
+                                    <div class="metric-label">Total Semester</div>
+                                    <div class="metric-val">{stats["total"]}</div>
+                                </div>
+                            </div>
+                            <div style="font-size: 13px; color: #cbd5e1; margin-top: 8px;">
+                                {status_msg}
                             </div>
                         </div>
                     ''', unsafe_allow_html=True)
-
-                    # Progress Bar & Alerts
-                    st.progress(min(1.0, stats['percentage'] / 100.0))
-
-                    if stats['safe_left'] > 0:
-                        st.success(f"🎯 **Safe to cut:** {stats['safe_left']} more lecture(s) left.")
-                    elif stats['safe_left'] == 0:
-                        st.warning(f"⚠️ **Limit Reached:** Maximum allowed cuts used!")
-                    else:
-                        st.error(f"🚨 **Warning:** Below 80%! Attend upcoming classes!")
-
-                    st.write(" ")
-                    if st.button(f"🔍 View / Edit Absent Dates", key=f"btn_pop_{subj}", use_container_width=True):
+                    
+                    if st.button(f"🔍 View History / Manage Absences", key=f"btn_mod_{subj}", use_container_width=True):
                         open_subject_modal(subj, cfg, username)
-                    st.write(" ")
 
                 if main_subjects:
-                    st.markdown("### 📘 Main Subjects")
-                    for subj in main_subjects:
-                        render_redesigned_subject_card(subj, is_tute=False)
+                    st.write("#### 📘 Core Modules")
+                    for s in main_subjects:
+                        render_redesigned_subject_card(s, is_tute=False)
 
                 if tutorial_subjects:
-                    st.write("---")
-                    st.markdown("### 📝 Tutorial Subjects *(Independent)*")
-                    for subj in tutorial_subjects:
-                        render_redesigned_subject_card(subj, is_tute=True)
-
-    # FOOTER ADDITION (ALL RIGHTS RESERVED)
-    st.markdown('''
-        <div class="footer-text">
-            © 2026 Lecture Attendance Tracker System. All Rights Reserved.
-        </div>
-    ''', unsafe_allow_html=True)
+                    st.write("#### 📝 Tutorial Sessions")
+                    for s in tutorial_subjects:
+                        render_redesigned_subject_card(s, is_tute=True)
 
 
 # ---------------------------------------------------------
-# 5. AUTHENTICATION SYSTEM (LOGIN / REGISTER)
+# 5. AUTHENTICATION (LOGIN / REGISTER) ENTRY POINT (PROFESSIONAL REDESIGN)
 # ---------------------------------------------------------
-def auth_interface():
-    st.markdown("<h1 style='text-align: center; color: white; margin-bottom: 25px;'>🎓 Lecture Attendance App</h1>", unsafe_allow_html=True)
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("🔑 Login Mode", use_container_width=True, type="primary" if st.session_state['auth_mode'] == "Login" else "secondary"):
-            st.session_state['auth_mode'] = "Login"
-            st.rerun()
-    with col2:
-        if st.button("📝 Register Mode", use_container_width=True, type="primary" if st.session_state['auth_mode'] == "Register" else "secondary"):
-            st.session_state['auth_mode'] = "Register"
-            st.rerun()
+if not st.session_state['logged_in']:
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    c_left, c_center, c_right = st.columns([1, 1.8, 1])
 
-    if st.session_state['auth_mode'] == "Login":
-        st.markdown('<div class="auth-card">', unsafe_allow_html=True)
-        st.subheader("Login to Your Account")
-        st.markdown("<p style='color: #94a3b8; font-size: 15px; margin-bottom: 20px;'>👋 Hi Welcome! Please login to your account</p>", unsafe_allow_html=True)
+    with c_center:
+        st.markdown('''
+            <div class="auth-container">
+                <div class="auth-header-title">🎓 Academic Portal</div>
+                <div class="auth-subtitle">Lecture Attendance & Academic Management System</div>
+        ''', unsafe_allow_html=True)
         
-        login_u = st.text_input("Username", key="l_user")
-        login_p = st.text_input("Password", type="password", key="l_pass")
+        auth_choice = st.radio("Select Action:", ["Login", "Register"], horizontal=True, label_visibility="collapsed")
+        st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True)
 
-        if st.button("🚀 Sign In", use_container_width=True, type="primary"):
-            user_display_name = check_login_db(login_u, login_p)
-            if user_display_name:
-                st.session_state['logged_in'] = True
-                st.session_state['current_user'] = user_display_name
-                st.session_state['current_username'] = login_u.strip().lower()
-                st.toast("Login Successful!", icon="🎉")
-                time.sleep(0.5)
-                st.rerun()
-            else:
-                st.error("Invalid Username or Password.")
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    else:
-        st.markdown('<div class="auth-card">', unsafe_allow_html=True)
-        st.subheader("Create a New Account")
-        st.markdown("<p style='color: #94a3b8; font-size: 15px; margin-bottom: 20px;'>👋 Hi Welcome! Please create your account below</p>", unsafe_allow_html=True)
-        
-        reg_fname = st.text_input("Full Name", placeholder="e.g. Kasun Perera")
-        reg_phone = st.text_input("Phone Number", placeholder="e.g. 0771234567")
-        reg_u = st.text_input("Username", placeholder="Choose a unique username")
-        reg_p = st.text_input("Password", type="password", key="reg_p")
-        reg_cp = st.text_input("Confirm Password", type="password", key="reg_cp")
-
-        if st.button("✨ Register Account", use_container_width=True, type="primary"):
-            clean_u = reg_u.strip()
-            if not reg_fname.strip() or not clean_u or not reg_p:
-                st.warning("Please fill in all details!")
-            elif reg_p != reg_cp:
-                st.error("Passwords do not match!")
-            else:
-                if register_user_db(clean_u, reg_fname, reg_phone, reg_p):
-                    st.session_state['logged_in'] = True
-                    st.session_state['current_user'] = reg_fname.strip()
-                    st.session_state['current_username'] = clean_u.lower()
-                    st.success("Account Created Successfully! Directing to App...")
-                    time.sleep(1)
-                    st.rerun()
+        if auth_choice == "Login":
+            u_input = st.text_input("Username", key="login_u", placeholder="Enter your username")
+            p_input = st.text_input("Password", type="password", key="login_p", placeholder="Enter your password")
+            st.write(" ")
+            
+            if st.button("Sign In to Portal", type="primary", use_container_width=True):
+                if u_input and p_input:
+                    name = check_login_db(u_input, p_input)
+                    if name:
+                        st.session_state['logged_in'] = True
+                        st.session_state['current_user'] = name
+                        st.session_state['current_username'] = u_input.strip().lower()
+                        st.success(f"Welcome back, {name}!")
+                        time.sleep(0.5)
+                        st.rerun()
+                    else:
+                        st.error("Invalid Username or Password.")
                 else:
-                    st.error("Username already taken! Try another one.")
+                    st.warning("Please fill in all fields.")
+
+        else:
+            reg_name = st.text_input("Full Name", key="reg_name", placeholder="John Doe")
+            reg_phone = st.text_input("Phone Number", key="reg_phone", placeholder="+94 XX XXX XXXX")
+            reg_u = st.text_input("Create Username", key="reg_u", placeholder="Choose a unique username")
+            reg_p = st.text_input("Create Password", type="password", key="reg_p", placeholder="Choose a strong password")
+            st.write(" ")
+            
+            if st.button("Create Student Account", type="primary", use_container_width=True):
+                if reg_name and reg_phone and reg_u and reg_p:
+                    success = register_user_db(reg_u, reg_name, reg_phone, reg_p)
+                    if success:
+                        st.success("Account created successfully! Please log in.")
+                    else:
+                        st.error("Username already exists. Choose another.")
+                else:
+                    st.warning("Please complete all registration fields.")
+
         st.markdown('</div>', unsafe_allow_html=True)
-
-    st.markdown('''
-        <div class="footer-text">
-            © 2026 Lecture Attendance Tracker System. All Rights Reserved.
-        </div>
-    ''', unsafe_allow_html=True)
-
-
-# ---------------------------------------------------------
-# 6. APP ROUTING
-# ---------------------------------------------------------
-if st.session_state['logged_in']:
-    main_app()
 else:
-    auth_interface()
+    main_app()
