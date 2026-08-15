@@ -102,8 +102,42 @@ def save_user_config_db(username, term_key, config):
     conn = get_db_conn()
     c = conn.cursor()
     clean_u = username.strip().lower()
-    cfg_copy = json.loads(json.dumps(config, default=str))
-    c.execute("INSERT OR REPLACE INTO user_configs VALUES (?, ?, ?)", (clean_u, term_key, json.dumps(cfg_copy)))
+    
+    # Safe serialization for dates and times
+    cfg_to_save = {
+        "setup_complete": config.get("setup_complete", False),
+        "start_date": config["start_date"].strftime("%Y-%m-%d") if isinstance(config["start_date"], (datetime.date, datetime.datetime)) else str(config["start_date"]),
+        "end_date": config["end_date"].strftime("%Y-%m-%d") if isinstance(config["end_date"], (datetime.date, datetime.datetime)) else str(config["end_date"]),
+        "registered_subjects": config.get("registered_subjects", []),
+        "mid_exam_dates": config.get("mid_exam_dates", []),
+        "custom_timetable": {},
+        "cancelled_lectures": config.get("cancelled_lectures", []),
+        "extra_lectures": []
+    }
+    
+    for day, slots in config.get("custom_timetable", {}).items():
+        day_slots = []
+        for s in slots:
+            st_str = s["start_time"].strftime("%H:%M:%S") if isinstance(s["start_time"], datetime.time) else str(s["start_time"])
+            et_str = s["end_time"].strftime("%H:%M:%S") if isinstance(s["end_time"], datetime.time) else str(s["end_time"])
+            day_slots.append({
+                "subject": s["subject"],
+                "start_time": st_str,
+                "end_time": et_str
+            })
+        cfg_to_save["custom_timetable"][day] = day_slots
+        
+    for ext in config.get("extra_lectures", []):
+        st_str = ext["start_time"].strftime("%H:%M:%S") if isinstance(ext["start_time"], datetime.time) else str(ext["start_time"])
+        et_str = ext["end_time"].strftime("%H:%M:%S") if isinstance(ext["end_time"], datetime.time) else str(ext["end_time"])
+        cfg_to_save["extra_lectures"].append({
+            "subject": ext["subject"],
+            "date": ext["date"],
+            "start_time": st_str,
+            "end_time": et_str
+        })
+
+    c.execute("INSERT OR REPLACE INTO user_configs VALUES (?, ?, ?)", (clean_u, term_key, json.dumps(cfg_to_save)))
     conn.commit()
 
 def load_absents_db(username, term_key):
@@ -383,7 +417,6 @@ if 'selected_year' not in st.session_state: st.session_state['selected_year'] = 
 if 'selected_semester' not in st.session_state: st.session_state['selected_semester'] = "Semester 1"
 if 'nav_mode' not in st.session_state: st.session_state['nav_mode'] = "🎓 Daily Attendance"
 
-# Cookie-like persistence simulation for remember me via session state initialization
 if 'remember_user' not in st.session_state: st.session_state['remember_user'] = ""
 if 'remember_pass' not in st.session_state: st.session_state['remember_pass'] = ""
 
@@ -619,7 +652,7 @@ def main_app():
         
         c_sub_in, c_sub_btn = st.columns([3, 1])
         with c_sub_in:
-            new_sub_name = st.text_input("New Subject Name:", placeholder="e.g. DSC 2370 Operations Management", key="input_new_sub")
+            new_sub_name = st.text_input("New Subject Name:", placeholder="e.g. Organization Behavior", key="input_new_sub")
         with c_sub_btn:
             st.write(" ")
             st.write(" ")
