@@ -184,6 +184,28 @@ st.markdown("""
     border: 1px solid rgba(255, 255, 255, 0.1);
     margin-bottom: 10px;
 }
+/* Modern Sidebar Styling */
+div[data-testid="stSidebar"] {
+    background: #0f172a !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+.user-profile-box {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    padding: 15px;
+    border-radius: 14px;
+    color: white;
+    text-align: center;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+}
+.nav-header {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #64748b;
+    margin-bottom: 10px;
+    font-weight: 700;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -217,6 +239,8 @@ if 'current_username' not in st.session_state:
     st.session_state['current_username'] = ""
 if 'auth_mode' not in st.session_state:
     st.session_state['auth_mode'] = "Login"
+if 'nav_mode' not in st.session_state:
+    st.session_state['nav_mode'] = "🎓 Daily Attendance"
 
 
 # ---------------------------------------------------------
@@ -277,6 +301,37 @@ def calculate_subject_stats(subj, cfg, absent_records):
     }
 
 
+# Helper function to extract time info from record_key for display
+def get_absence_details(rec_key, cfg):
+    parts = rec_key.split('_')
+    if len(parts) >= 3:
+        date_str = parts[0]
+        subj = parts[1]
+        idx = int(parts[2])
+        
+        date_obj = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
+        day_name = date_obj.strftime("%A")
+        
+        time_str = "Time Unknown"
+        
+        # Check regular timetable first
+        day_slots = [l for l in cfg["custom_timetable"].get(day_name, []) if l["subject"] == subj]
+        cancelled_today = [c["subject"] for c in cfg.get("cancelled_lectures", []) if c["date"] == date_str]
+        active_slots = [l for l in day_slots if l["subject"] not in cancelled_today]
+        
+        # Check extra lectures
+        for ext in [e for e in cfg.get("extra_lectures", []) if e["date"] == date_str and e["subject"] == subj]:
+            active_slots.append({"subject": ext["subject"], "start_time": ext["start_time"], "end_time": ext["end_time"]})
+            
+        if idx < len(active_slots):
+            st_t = active_slots[idx]["start_time"]
+            end_t = active_slots[idx]["end_time"]
+            time_str = f"{st_t.strftime('%I:%M %p')} - {end_t.strftime('%I:%M %p')}"
+            
+        return date_str, time_str
+    return "Unknown Date", "Unknown Time"
+
+
 # ---------------------------------------------------------
 # 4. MAIN DASHBOARD & APPLICATION LOGIC
 # ---------------------------------------------------------
@@ -304,18 +359,42 @@ def main_app():
 
     cfg = st.session_state['cfg']
 
-    st.sidebar.markdown(f"### 👤 Welcome, {user_display}")
-    
-    nav_mode = st.sidebar.radio("Navigation Menu:", ["🎓 Daily Attendance", "🚫 Cancel / Extra Lectures", "⚙️ Timetable Setup"])
-    
-    st.sidebar.write("---")
-    if st.sidebar.button("🚪 Logout", use_container_width=True):
-        st.session_state['logged_in'] = False
-        st.session_state['current_user'] = ""
-        st.session_state['current_username'] = ""
-        if 'cfg' in st.session_state: del st.session_state['cfg']
-        if 'absent_records' in st.session_state: del st.session_state['absent_records']
-        st.rerun()
+    # ---------------------------------------------------------
+    # MODERN SIDEBAR NAVIGATION
+    # ---------------------------------------------------------
+    with st.sidebar:
+        st.markdown(f'''
+            <div class="user-profile-box">
+                <h2 style="margin:0; font-size:20px;">🎓 {user_display}</h2>
+                <p style="margin:4px 0 0 0; font-size:12px; opacity:0.8;">Student Portal</p>
+            </div>
+        ''', unsafe_allow_html=True)
+        
+        st.markdown('<div class="nav-header">Navigation Menu</div>', unsafe_allow_html=True)
+        
+        menu_items = [
+            ("🎓 Daily Attendance", "🎓 Daily Attendance"),
+            ("🚫 Cancel / Extra Lectures", "🚫 Cancel / Extra Lectures"),
+            ("⚙️ Timetable Setup", "⚙️ Timetable Setup")
+        ]
+        
+        for label, mode in menu_items:
+            is_active = st.session_state['nav_mode'] == mode
+            btn_type = "primary" if is_active else "secondary"
+            if st.button(label, use_container_width=True, type=btn_type, key=f"nav_{mode}"):
+                st.session_state['nav_mode'] = mode
+                st.rerun()
+
+        st.write("---")
+        if st.button("🚪 Logout", use_container_width=True):
+            st.session_state['logged_in'] = False
+            st.session_state['current_user'] = ""
+            st.session_state['current_username'] = ""
+            if 'cfg' in st.session_state: del st.session_state['cfg']
+            if 'absent_records' in st.session_state: del st.session_state['absent_records']
+            st.rerun()
+
+    nav_mode = st.session_state['nav_mode']
 
     # ---------------------------------------------------------
     # STEP 1: INITIAL SETUP IF NOT COMPLETED
@@ -525,7 +604,7 @@ def main_app():
                             st.rerun()
                     st.markdown('</div>', unsafe_allow_html=True)
 
-        # RIGHT COLUMN: SUBJECT PROGRESS & 80% CALCULATION
+        # RIGHT COLUMN: SUBJECT PROGRESS & ABSENCE MANAGEMENT
         with col_stats:
             st.subheader("📊 Subject Progress & Stats")
             all_subjects = sorted(list(set(l["subject"] for day in cfg["custom_timetable"] for l in cfg["custom_timetable"][day])))
@@ -536,50 +615,60 @@ def main_app():
                 main_subjects = [s for s in all_subjects if not ("tutorial" in s.lower() or "tute" in s.lower())]
                 tutorial_subjects = [s for s in all_subjects if ("tutorial" in s.lower() or "tute" in s.lower())]
 
+                # HELPER TO RENDER SUBJECT DETAILS & ABSENT DATES
+                def render_subject_card(subj, is_tute=False):
+                    stats = calculate_subject_stats(subj, cfg, st.session_state['absent_records'])
+                    icon = "📖" if is_tute else "📚"
+                    
+                    with st.expander(f"{icon} **{subj}** ({stats['percentage']:.1f}%)", expanded=True):
+                        st.write(f"• **Total Sessions:** {stats['total']}")
+                        st.write(f"• **Present Lectures:** {stats['attended']}")
+                        st.write(f"• **Absent Lectures:** {stats['absences']}")
+                        st.write(f"• **Attendance Rate:** `{stats['percentage']:.1f}%`")
+                        st.write(f"• **Remaining Sessions:** {stats['remaining']}")
+                        st.write(f"• **Max Allowed Cuts (80%):** {stats['max_allowed']}")
+                        st.write(f"• **Already Cut:** {stats['absences']}")
+                        
+                        st.progress(min(1.0, stats['percentage'] / 100.0))
+                        
+                        if stats['safe_left'] >= 0:
+                            st.success(f"🎯 **Safe to cut:** {stats['safe_left']} more lecture(s) left.")
+                        else:
+                            st.error(f"⚠️ **Warning:** Below 80%! Attend upcoming classes!")
+
+                        # ABSENT DATES VIEW & EDIT SECTION
+                        st.write("---")
+                        st.markdown("**📅 View / Edit Absent Dates:**")
+                        subj_absents = [r for r in st.session_state['absent_records'] if f"_{subj}_" in r]
+                        
+                        if not subj_absents:
+                            st.caption("🎉 No absent lectures recorded for this subject!")
+                        else:
+                            for abs_key in subj_absents:
+                                abs_d, abs_t = get_absence_details(abs_key, cfg)
+                                c_abs_info, c_abs_btn = st.columns([3, 2])
+                                with c_abs_info:
+                                    st.write(f"❌ `{abs_d}`\n({abs_t})")
+                                with c_abs_btn:
+                                    if st.button("Mark Present", key=f"rm_abs_{abs_key}"):
+                                        st.session_state['absent_records'].discard(abs_key)
+                                        save_absents_db(username, st.session_state['absent_records'])
+                                        st.toast("Attendance Updated!", icon="✅")
+                                        time.sleep(0.4)
+                                        st.rerun()
+
                 # RENDER MAIN SUBJECTS FIRST
                 if main_subjects:
                     st.markdown("#### 📘 Main Subjects")
                     for subj in main_subjects:
-                        stats = calculate_subject_stats(subj, cfg, st.session_state['absent_records'])
-                        
-                        with st.expander(f"📚 **{subj}** ({stats['percentage']:.1f}%)", expanded=True):
-                            st.write(f"• **Total Sessions:** {stats['total']}")
-                            st.write(f"• **Present Lectures:** {stats['attended']}")
-                            st.write(f"• **Absent Lectures:** {stats['absences']}")
-                            st.write(f"• **Attendance Rate:** `{stats['percentage']:.1f}%`")
-                            st.write(f"• **Remaining Sessions:** {stats['remaining']}")
-                            st.write(f"• **Max Allowed Cuts (80%):** {stats['max_allowed']}")
-                            st.write(f"• **Already Cut:** {stats['absences']}")
-                            
-                            st.progress(min(1.0, stats['percentage'] / 100.0))
-                            
-                            if stats['safe_left'] >= 0:
-                                st.success(f"🎯 **Safe to cut:** {stats['safe_left']} more lecture(s) left.")
-                            else:
-                                st.error(f"⚠️ **Warning:** Below 80%! Attend upcoming classes!")
+                        render_subject_card(subj, is_tute=False)
 
                 # RENDER TUTORIAL SUBJECTS SECOND
                 if tutorial_subjects:
                     st.write("---")
                     st.markdown("#### 📝 Tutorial Subjects *(Independent)*")
                     for subj in tutorial_subjects:
-                        stats = calculate_subject_stats(subj, cfg, st.session_state['absent_records'])
-                        
-                        with st.expander(f"📖 **{subj}** ({stats['percentage']:.1f}%)", expanded=False):
-                            st.write(f"• **Total Sessions:** {stats['total']}")
-                            st.write(f"• **Present Lectures:** {stats['attended']}")
-                            st.write(f"• **Absent Lectures:** {stats['absences']}")
-                            st.write(f"• **Attendance Rate:** `{stats['percentage']:.1f}%`")
-                            st.write(f"• **Remaining Sessions:** {stats['remaining']}")
-                            st.write(f"• **Max Allowed Cuts (80%):** {stats['max_allowed']}")
-                            st.write(f"• **Already Cut:** {stats['absences']}")
-                            
-                            st.progress(min(1.0, stats['percentage'] / 100.0))
-                            
-                            if stats['safe_left'] >= 0:
-                                st.info(f"💡 **Tutorial Safe Cut:** {stats['safe_left']} session(s) left.")
-                            else:
-                                st.warning(f"⚠️ **Tutorial Warning:** Below 80% attendance.")
+                        render_subject_card(subj, is_tute=True)
 
 
 # ---------------------------------------------------------
