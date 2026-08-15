@@ -10,7 +10,7 @@ import json
 # 0. DATABASE INITIALIZATION & HELPER FUNCTIONS
 # ---------------------------------------------------------
 def init_db():
-    conn = sqlite3.connect('attendance_app.db')
+    conn = sqlite3.connect('attendance_app.db', check_same_thread=False)
     c = conn.cursor()
     c.execute('''
         CREATE TABLE IF NOT EXISTS users (
@@ -42,7 +42,8 @@ def init_db():
 init_db()
 
 def register_user_db(username, name, phone, password):
-    conn = sqlite3.connect('attendance_app.db')
+    init_db()
+    conn = sqlite3.connect('attendance_app.db', check_same_thread=False)
     c = conn.cursor()
     clean_u = username.strip().lower()
     try:
@@ -55,7 +56,8 @@ def register_user_db(username, name, phone, password):
         return False
 
 def check_login_db(username, password):
-    conn = sqlite3.connect('attendance_app.db')
+    init_db()
+    conn = sqlite3.connect('attendance_app.db', check_same_thread=False)
     c = conn.cursor()
     clean_u = username.strip().lower()
     c.execute("SELECT name FROM users WHERE username=? AND password=?", (clean_u, password))
@@ -65,7 +67,7 @@ def check_login_db(username, password):
 
 def load_user_config_db(username, term_key):
     init_db()
-    conn = sqlite3.connect('attendance_app.db')
+    conn = sqlite3.connect('attendance_app.db', check_same_thread=False)
     c = conn.cursor()
     clean_u = username.strip().lower()
     try:
@@ -96,7 +98,7 @@ def load_user_config_db(username, term_key):
 
 def save_user_config_db(username, term_key, config):
     init_db()
-    conn = sqlite3.connect('attendance_app.db')
+    conn = sqlite3.connect('attendance_app.db', check_same_thread=False)
     c = conn.cursor()
     clean_u = username.strip().lower()
     cfg_copy = json.loads(json.dumps(config, default=str))
@@ -106,7 +108,7 @@ def save_user_config_db(username, term_key, config):
 
 def load_absents_db(username, term_key):
     init_db()
-    conn = sqlite3.connect('attendance_app.db')
+    conn = sqlite3.connect('attendance_app.db', check_same_thread=False)
     c = conn.cursor()
     clean_u = username.strip().lower()
     try:
@@ -121,7 +123,7 @@ def load_absents_db(username, term_key):
 
 def save_absents_db(username, term_key, absent_set):
     init_db()
-    conn = sqlite3.connect('attendance_app.db')
+    conn = sqlite3.connect('attendance_app.db', check_same_thread=False)
     c = conn.cursor()
     clean_u = username.strip().lower()
     c.execute("DELETE FROM absent_records WHERE username=? AND term_key=?", (clean_u, term_key))
@@ -1043,7 +1045,7 @@ if not st.session_state['logged_in']:
                     else:
                         st.error("Invalid Username or Password.")
                 else:
-                    st.warning("Please fill in all fields.")
+                        st.warning("Please fill in all fields.")
             st.markdown('</div>', unsafe_allow_html=True)
 
         else:
