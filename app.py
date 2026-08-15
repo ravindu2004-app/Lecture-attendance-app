@@ -44,7 +44,7 @@ def init_db():
         ''')
         conn.commit()
     except Exception as e:
-        st.error(f"Database Initialization Error: {e}")
+        pass
 
 init_db()
 
@@ -78,19 +78,25 @@ def load_user_config_db(username, term_key):
         c.execute("SELECT config_json FROM user_configs WHERE username=? AND term_key=?", (clean_u, term_key))
         row = c.fetchone()
         
-        if row:
+        if row and row[0]:
             data = json.loads(row[0])
-            data["start_date"] = datetime.datetime.strptime(data["start_date"], "%Y-%m-%d").date()
-            data["end_date"] = datetime.datetime.strptime(data["end_date"], "%Y-%m-%d").date()
+            if "start_date" in data:
+                data["start_date"] = datetime.datetime.strptime(data["start_date"], "%Y-%m-%d").date()
+            if "end_date" in data:
+                data["end_date"] = datetime.datetime.strptime(data["end_date"], "%Y-%m-%d").date()
             
             for day in data.get("custom_timetable", {}):
                 for session in data["custom_timetable"][day]:
-                    session["start_time"] = datetime.datetime.strptime(session["start_time"], "%H:%M:%S").time()
-                    session["end_time"] = datetime.datetime.strptime(session["end_time"], "%H:%M:%S").time()
+                    if "start_time" in session:
+                        session["start_time"] = datetime.datetime.strptime(session["start_time"], "%H:%M:%S").time()
+                    if "end_time" in session:
+                        session["end_time"] = datetime.datetime.strptime(session["end_time"], "%H:%M:%S").time()
                     
             for ext in data.get("extra_lectures", []):
-                ext["start_time"] = datetime.datetime.strptime(ext["start_time"], "%H:%M:%S").time()
-                ext["end_time"] = datetime.datetime.strptime(ext["end_time"], "%H:%M:%S").time()
+                if "start_time" in ext:
+                    ext["start_time"] = datetime.datetime.strptime(ext["start_time"], "%H:%M:%S").time()
+                if "end_time" in ext:
+                    ext["end_time"] = datetime.datetime.strptime(ext["end_time"], "%H:%M:%S").time()
                 
             return data
     except Exception:
@@ -103,42 +109,48 @@ def save_user_config_db(username, term_key, config):
     c = conn.cursor()
     clean_u = username.strip().lower()
     
-    # Safe serialization for dates and times
-    cfg_to_save = {
-        "setup_complete": config.get("setup_complete", False),
-        "start_date": config["start_date"].strftime("%Y-%m-%d") if isinstance(config["start_date"], (datetime.date, datetime.datetime)) else str(config["start_date"]),
-        "end_date": config["end_date"].strftime("%Y-%m-%d") if isinstance(config["end_date"], (datetime.date, datetime.datetime)) else str(config["end_date"]),
-        "registered_subjects": config.get("registered_subjects", []),
-        "mid_exam_dates": config.get("mid_exam_dates", []),
-        "custom_timetable": {},
-        "cancelled_lectures": config.get("cancelled_lectures", []),
-        "extra_lectures": []
-    }
-    
-    for day, slots in config.get("custom_timetable", {}).items():
-        day_slots = []
-        for s in slots:
-            st_str = s["start_time"].strftime("%H:%M:%S") if isinstance(s["start_time"], datetime.time) else str(s["start_time"])
-            et_str = s["end_time"].strftime("%H:%M:%S") if isinstance(s["end_time"], datetime.time) else str(s["end_time"])
-            day_slots.append({
-                "subject": s["subject"],
+    try:
+        cfg_to_save = {
+            "setup_complete": config.get("setup_complete", False),
+            "start_date": config["start_date"].strftime("%Y-%m-%d") if isinstance(config.get("start_date"), (datetime.date, datetime.datetime)) else str(config.get("start_date", datetime.date.today())),
+            "end_date": config["end_date"].strftime("%Y-%m-%d") if isinstance(config.get("end_date"), (datetime.date, datetime.datetime)) else str(config.get("end_date", datetime.date.today())),
+            "registered_subjects": config.get("registered_subjects", []),
+            "mid_exam_dates": config.get("mid_exam_dates", []),
+            "custom_timetable": {},
+            "cancelled_lectures": config.get("cancelled_lectures", []),
+            "extra_lectures": []
+        }
+        
+        for day, slots in config.get("custom_timetable", {}).items():
+            day_slots = []
+            for s in slots:
+                st_val = s.get("start_time", datetime.time(9, 0))
+                et_val = s.get("end_time", datetime.time(11, 0))
+                st_str = st_val.strftime("%H:%M:%S") if isinstance(st_val, datetime.time) else str(st_val)
+                et_str = et_val.strftime("%H:%M:%S") if isinstance(et_val, datetime.time) else str(et_val)
+                day_slots.append({
+                    "subject": s.get("subject", ""),
+                    "start_time": st_str,
+                    "end_time": et_str
+                })
+            cfg_to_save["custom_timetable"][day] = day_slots
+            
+        for ext in config.get("extra_lectures", []):
+            st_val = ext.get("start_time", datetime.time(9, 0))
+            et_val = ext.get("end_time", datetime.time(11, 0))
+            st_str = st_val.strftime("%H:%M:%S") if isinstance(st_val, datetime.time) else str(st_val)
+            et_str = et_val.strftime("%H:%M:%S") if isinstance(et_val, datetime.time) else str(et_val)
+            cfg_to_save["extra_lectures"].append({
+                "subject": ext.get("subject", ""),
+                "date": ext.get("date", ""),
                 "start_time": st_str,
                 "end_time": et_str
             })
-        cfg_to_save["custom_timetable"][day] = day_slots
-        
-    for ext in config.get("extra_lectures", []):
-        st_str = ext["start_time"].strftime("%H:%M:%S") if isinstance(ext["start_time"], datetime.time) else str(ext["start_time"])
-        et_str = ext["end_time"].strftime("%H:%M:%S") if isinstance(ext["end_time"], datetime.time) else str(ext["end_time"])
-        cfg_to_save["extra_lectures"].append({
-            "subject": ext["subject"],
-            "date": ext["date"],
-            "start_time": st_str,
-            "end_time": et_str
-        })
 
-    c.execute("INSERT OR REPLACE INTO user_configs VALUES (?, ?, ?)", (clean_u, term_key, json.dumps(cfg_to_save)))
-    conn.commit()
+        c.execute("INSERT OR REPLACE INTO user_configs VALUES (?, ?, ?)", (clean_u, term_key, json.dumps(cfg_to_save)))
+        conn.commit()
+    except Exception as e:
+        st.error(f"Database Save Error: {e}")
 
 def load_absents_db(username, term_key):
     init_db()
@@ -157,10 +169,13 @@ def save_absents_db(username, term_key, absent_set):
     conn = get_db_conn()
     c = conn.cursor()
     clean_u = username.strip().lower()
-    c.execute("DELETE FROM absent_records WHERE username=? AND term_key=?", (clean_u, term_key))
-    for key in absent_set:
-        c.execute("INSERT INTO absent_records VALUES (?, ?, ?)", (clean_u, term_key, key))
-    conn.commit()
+    try:
+        c.execute("DELETE FROM absent_records WHERE username=? AND term_key=?", (clean_u, term_key))
+        for key in absent_set:
+            c.execute("INSERT INTO absent_records VALUES (?, ?, ?)", (clean_u, term_key, key))
+        conn.commit()
+    except Exception:
+        pass
 
 # ---------------------------------------------------------
 # MOBILE TOUCH-FRIENDLY TIME PICKER HELPER
@@ -641,8 +656,8 @@ def main_app():
         ''', unsafe_allow_html=True)
         
         c1, c2 = st.columns(2)
-        start_d = c1.date_input("Semester Start Date", value=cfg["start_date"])
-        end_d = c2.date_input("Semester End Date", value=cfg["end_date"])
+        start_d = c1.date_input("Semester Start Date", value=cfg.get("start_date", datetime.date.today()))
+        end_d = c2.date_input("Semester End Date", value=cfg.get("end_date", datetime.date.today() + datetime.timedelta(days=120)))
 
         mid_dates = st.date_input("Select Mid-Exam Date Range", value=(start_d + datetime.timedelta(days=30), start_d + datetime.timedelta(days=36)))
 
@@ -652,7 +667,7 @@ def main_app():
         
         c_sub_in, c_sub_btn = st.columns([3, 1])
         with c_sub_in:
-            new_sub_name = st.text_input("New Subject Name:", placeholder="e.g. Organization Behavior", key="input_new_sub")
+            new_sub_name = st.text_input("New Subject Name:", placeholder="e.g. Organizational Behavior", key="input_new_sub")
         with c_sub_btn:
             st.write(" ")
             st.write(" ")
@@ -691,9 +706,9 @@ def main_app():
                             curr_val = slot["subject"] if slot["subject"] in reg_subs else reg_subs[0]
                             s_name = st.selectbox(f"Select Subject", reg_subs, index=reg_subs.index(curr_val), key=f"s_{day}_{idx}")
                         with col_s_time:
-                            s_time = mobile_time_picker("Start Time", key_prefix=f"st_{day}_{idx}", default_time=slot["start_time"])
+                            s_time = mobile_time_picker("Start Time", key_prefix=f"st_{day}_{idx}", default_time=slot.get("start_time", datetime.time(9, 0)))
                         with col_e_time:
-                            e_time = mobile_time_picker("End Time", key_prefix=f"et_{day}_{idx}", default_time=slot["end_time"])
+                            e_time = mobile_time_picker("End Time", key_prefix=f"et_{day}_{idx}", default_time=slot.get("end_time", datetime.time(11, 0)))
                         with col_del:
                             st.write(" ")
                             st.write(" ")
@@ -787,7 +802,7 @@ def main_app():
         all_subjects = cfg.get("registered_subjects", [])
 
         with tab_cancel:
-            c_date = st.date_input("Select Cancel Date:", min_value=cfg["start_date"], max_value=cfg["end_date"], key="c_date")
+            c_date = st.date_input("Select Cancel Date:", min_value=cfg.get("start_date", datetime.date.today()), max_value=cfg.get("end_date", datetime.date.today() + datetime.timedelta(days=120)), key="c_date")
             c_day_name = c_date.strftime("%A")
             day_lectures = cfg["custom_timetable"].get(c_day_name, [])
             day_subjects = sorted(list(set(l["subject"] for l in day_lectures)))
@@ -815,7 +830,7 @@ def main_app():
 
         with tab_extra:
             if all_subjects:
-                e_date = st.date_input("Select Extra Lecture Date:", min_value=cfg["start_date"], max_value=cfg["end_date"], key="e_date")
+                e_date = st.date_input("Select Extra Lecture Date:", min_value=cfg.get("start_date", datetime.date.today()), max_value=cfg.get("end_date", datetime.date.today() + datetime.timedelta(days=120)), key="e_date")
                 e_subj = st.selectbox("Select Subject for Extra Class:", options=all_subjects, key="e_subj")
                 col_st, col_et = st.columns(2)
                 with col_st: e_st = mobile_time_picker("Start Time", key_prefix="e_st", default_time=datetime.time(9, 0))
@@ -850,7 +865,9 @@ def main_app():
 
         with col_main:
             st.markdown('<div class="tracker-card">', unsafe_allow_html=True)
-            selected_date = st.date_input("Select Attendance Date:", value=datetime.date.today() if cfg["start_date"] <= datetime.date.today() <= cfg["end_date"] else cfg["start_date"], min_value=cfg["start_date"], max_value=cfg["end_date"])
+            start_date_cfg = cfg.get("start_date", datetime.date.today())
+            end_date_cfg = cfg.get("end_date", datetime.date.today() + datetime.timedelta(days=120))
+            selected_date = st.date_input("Select Attendance Date:", value=datetime.date.today() if start_date_cfg <= datetime.date.today() <= end_date_cfg else start_date_cfg, min_value=start_date_cfg, max_value=end_date_cfg)
             selected_str = selected_date.strftime("%Y-%m-%d")
             day_name = selected_date.strftime("%A")
 
@@ -879,7 +896,9 @@ def main_app():
                     subj_idx = subj_counter[subj]
                     subj_counter[subj] += 1
 
-                    formatted_time = f"{lec['start_time'].strftime('%I:%M %p')} - {lec['end_time'].strftime('%I:%M %p')}"
+                    st_t = lec['start_time'].strftime('%I:%M %p') if isinstance(lec['start_time'], datetime.time) else str(lec['start_time'])
+                    end_t = lec['end_time'].strftime('%I:%M %p') if isinstance(lec['end_time'], datetime.time) else str(lec['end_time'])
+                    formatted_time = f"{st_t} - {end_t}"
                     extra_tag = " (Extra Class)" if lec.get("is_extra") else ""
                     record_key = f"{selected_str}_{subj}_{subj_idx}"
                     is_absent = record_key in st.session_state['absent_records']
