@@ -156,19 +156,32 @@ st.markdown("""
     margin-bottom: 10px;
 }
 
-/* Mobile touch fix for Streamlit time inputs.
-   This does not change the visual layout; it only keeps the native
-   time input and its picker indicator touch-enabled on mobile browsers. */
+/* Mobile Touch Optimization for Streamlit Time Input Wrappers */
+div[data-baseweb="timepicker"], 
+div[data-baseweb="timepicker"] * {
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
+}
+
+div[data-baseweb="select"] input {
+    touch-action: manipulation !important;
+}
+
 input[type="time"] {
     pointer-events: auto !important;
     touch-action: manipulation !important;
     -webkit-appearance: auto !important;
+    position: relative !important;
+    z-index: 9999 !important;
 }
 
 input[type="time"]::-webkit-calendar-picker-indicator {
     pointer-events: auto !important;
     opacity: 1 !important;
-    cursor: pointer;
+    cursor: pointer !important;
+    display: block !important;
+    width: 25px;
+    height: 25px;
 }
 </style>
 """, unsafe_allow_html=True)
