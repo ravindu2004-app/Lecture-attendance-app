@@ -926,7 +926,7 @@ def main_app():
             st.markdown("---")
             st.subheader("Your Extra Classes")
             extra_list = cfg.get("extra_lectures", [])
-            current_extras = [ex for ex in extra_list if ex.get("year") == cfg["selected_year"] and ex.get("semester"] == cfg["selected_semester"]]
+            current_extras = [ex for ex in extra_list if (ex.get("year") == cfg["selected_year"] and ex.get("semester") == cfg["selected_semester"])]
             
             if not current_extras:
                 st.info("No extra lectures added.")
