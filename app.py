@@ -143,7 +143,7 @@ def mobile_time_picker(label, key_prefix, default_time=datetime.time(9, 0)):
 
 
 # ---------------------------------------------------------
-# 1. PAGE CONFIGURATION & STYLING (ENHANCED MODERN LOOK)
+# 1. PAGE CONFIGURATION & CUSTOM CARDS STYLING
 # ---------------------------------------------------------
 st.set_page_config(page_title="Lecture Attendance Tracker", page_icon="🎓", layout="wide")
 
@@ -181,6 +181,92 @@ html, body, [class*="css"] {
     letter-spacing: -0.5px;
 }
 
+/* CUSTOM MODERN SUBJECT CARD STYLES */
+.subject-card-main {
+    background: linear-gradient(145deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.8) 100%);
+    border: 1px solid rgba(59, 130, 246, 0.25);
+    border-radius: 20px;
+    padding: 22px;
+    margin-bottom: 20px;
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.3);
+    position: relative;
+    backdrop-filter: blur(12px);
+}
+
+.subject-card-tute {
+    background: linear-gradient(145deg, rgba(46, 16, 101, 0.5) 0%, rgba(15, 23, 42, 0.85) 100%);
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    border-radius: 20px;
+    padding: 22px;
+    margin-bottom: 20px;
+    box-shadow: 0 10px 30px -5px rgba(88, 28, 135, 0.2);
+    position: relative;
+    backdrop-filter: blur(12px);
+}
+
+.card-header-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.subject-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #f8fafc;
+    margin: 0;
+}
+
+.badge-green {
+    background: rgba(34, 197, 94, 0.15);
+    color: #4ade80;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.badge-red {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-top: 15px;
+    margin-bottom: 15px;
+}
+
+.metric-item {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 10px 14px;
+    border-radius: 12px;
+}
+
+.metric-label {
+    font-size: 11px;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+}
+
+.metric-val {
+    font-size: 15px;
+    font-weight: 700;
+    color: #e2e8f0;
+}
+
 .auth-card {
     background: rgba(15, 23, 42, 0.65);
     backdrop-filter: blur(20px);
@@ -197,7 +283,6 @@ html, body, [class*="css"] {
     border-radius: 16px;
     border-left: 6px solid #fbbf24;
     margin-bottom: 20px;
-    box-shadow: 0 10px 20px rgba(180, 83, 9, 0.2);
 }
 
 .exam-card {
@@ -207,7 +292,6 @@ html, body, [class*="css"] {
     border-radius: 16px;
     border-left: 6px solid #f87171;
     margin-bottom: 20px;
-    box-shadow: 0 10px 20px rgba(185, 28, 28, 0.2);
 }
 
 .stat-box {
@@ -216,12 +300,6 @@ html, body, [class*="css"] {
     padding: 18px;
     border: 1px solid rgba(255, 255, 255, 0.07);
     margin-bottom: 14px;
-    transition: all 0.2s ease;
-}
-
-.stat-box:hover {
-    border-color: rgba(96, 165, 250, 0.3);
-    background: rgba(30, 41, 59, 0.6);
 }
 
 div[data-testid="stSidebar"] {
@@ -294,7 +372,7 @@ if 'nav_mode' not in st.session_state:
 
 
 # ---------------------------------------------------------
-# 3. ACCURATE STATS CALCULATION (FIXED 80% THRESHOLD)
+# 3. ACCURATE STATS CALCULATION (STRICT 80% THRESHOLD)
 # ---------------------------------------------------------
 def calculate_subject_stats(subj, cfg, absent_records):
     start_d = cfg["start_date"]
@@ -353,7 +431,6 @@ def calculate_subject_stats(subj, cfg, absent_records):
     }
 
 
-# FIX: TIME UNKNOWN ISSUE RESOLVED BY RETRIEVING EXACT SESSION TIME
 def get_absence_details(rec_key, cfg):
     parts = rec_key.split('_')
     if len(parts) >= 3:
@@ -364,7 +441,6 @@ def get_absence_details(rec_key, cfg):
         date_obj = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
         day_name = date_obj.strftime("%A")
         
-        # Build active sessions list on that day in order
         active_slots = []
         regular_slots = cfg["custom_timetable"].get(day_name, [])
         cancelled_today = [c["subject"] for c in cfg.get("cancelled_lectures", []) if c["date"] == date_str]
@@ -377,7 +453,6 @@ def get_absence_details(rec_key, cfg):
             if ext["date"] == date_str:
                 active_slots.append(ext)
                 
-        # Filter for the target subject
         subj_slots = [s for s in active_slots if s["subject"] == subj]
         
         if idx < len(subj_slots):
@@ -677,7 +752,6 @@ def main_app():
             if not active_lectures:
                 st.info("No lectures scheduled for this date!")
             else:
-                # Count index per subject for accurate unique key generation
                 subj_counter = {}
                 for lec in active_lectures:
                     subj = lec["subject"]
@@ -717,42 +791,66 @@ def main_app():
                 main_subjects = [s for s in all_subjects if not ("tutorial" in s.lower() or "tute" in s.lower())]
                 tutorial_subjects = [s for s in all_subjects if ("tutorial" in s.lower() or "tute" in s.lower())]
 
-                def render_subject_card(subj, is_tute=False):
+                # REDESIGNED MODERN CARD RENDERING FUNCTION
+                def render_redesigned_subject_card(subj, is_tute=False):
                     stats = calculate_subject_stats(subj, cfg, st.session_state['absent_records'])
-                    icon = "📖" if is_tute else "📚"
-                    
-                    with st.expander(f"{icon} **{subj}** ({stats['percentage']:.1f}%)", expanded=True):
-                        st.write(f"• **Total Sessions:** {stats['total']}")
-                        st.write(f"• **Present Lectures:** {stats['attended']}")
-                        st.write(f"• **Absent Lectures:** {stats['absences']}")
-                        st.write(f"• **Attendance Rate:** `{stats['percentage']:.1f}%`")
-                        st.write(f"• **Remaining Sessions:** {stats['remaining']}")
-                        st.write(f"• **Max Allowed Cuts (80%):** {stats['max_allowed']}")
-                        st.write(f"• **Already Cut:** {stats['absences']}")
-                        
-                        st.progress(min(1.0, stats['percentage'] / 100.0))
-                        
-                        if stats['safe_left'] > 0:
-                            st.success(f"🎯 **Safe to cut:** {stats['safe_left']} more lecture(s) left.")
-                        elif stats['safe_left'] == 0:
-                            st.warning(f"⚠️ **Limit Reached:** Maximum allowed cuts used. Do not miss any more lectures!")
-                        else:
-                            st.error(f"🚨 **Warning:** Below 80%! Attend upcoming classes to recover!")
+                    card_class = "subject-card-tute" if is_tute else "subject-card-main"
+                    badge_class = "badge-green" if stats['percentage'] >= 80 else "badge-red"
+                    icon = "📝" if is_tute else "📚"
 
-                        st.write(" ")
-                        if st.button(f"🔍 View / Edit Absent Dates", key=f"btn_pop_{subj}", use_container_width=True):
-                            open_subject_modal(subj, cfg, username)
+                    # Card Header HTML
+                    st.markdown(f'''
+                        <div class="{card_class}">
+                            <div class="card-header-flex">
+                                <h3 class="subject-title">{icon} {subj}</h3>
+                                <span class="{badge_class}">{stats['percentage']:.1f}%</span>
+                            </div>
+                            <div class="metrics-grid">
+                                <div class="metric-item">
+                                    <div class="metric-label">Total Sessions</div>
+                                    <div class="metric-val">{stats['total']}</div>
+                                </div>
+                                <div class="metric-item">
+                                    <div class="metric-label">Attended</div>
+                                    <div class="metric-val">{stats['attended']} / {stats['past_conducted']}</div>
+                                </div>
+                                <div class="metric-item">
+                                    <div class="metric-label">Cuts / Absent</div>
+                                    <div class="metric-val">{stats['absences']}</div>
+                                </div>
+                                <div class="metric-item">
+                                    <div class="metric-label">Max Allowed Cuts</div>
+                                    <div class="metric-val">{stats['max_allowed']}</div>
+                                </div>
+                            </div>
+                        </div>
+                    ''', unsafe_allow_html=True)
+
+                    # Progress Bar & Alerts
+                    st.progress(min(1.0, stats['percentage'] / 100.0))
+
+                    if stats['safe_left'] > 0:
+                        st.success(f"🎯 **Safe to cut:** {stats['safe_left']} more lecture(s) left.")
+                    elif stats['safe_left'] == 0:
+                        st.warning(f"⚠️ **Limit Reached:** Maximum allowed cuts used!")
+                    else:
+                        st.error(f"🚨 **Warning:** Below 80%! Attend upcoming classes!")
+
+                    st.write(" ")
+                    if st.button(f"🔍 View / Edit Absent Dates", key=f"btn_pop_{subj}", use_container_width=True):
+                        open_subject_modal(subj, cfg, username)
+                    st.write(" ")
 
                 if main_subjects:
-                    st.markdown("#### 📘 Main Subjects")
+                    st.markdown("### 📘 Main Subjects")
                     for subj in main_subjects:
-                        render_subject_card(subj, is_tute=False)
+                        render_redesigned_subject_card(subj, is_tute=False)
 
                 if tutorial_subjects:
                     st.write("---")
-                    st.markdown("#### 📝 Tutorial Subjects *(Independent)*")
+                    st.markdown("### 📝 Tutorial Subjects *(Independent)*")
                     for subj in tutorial_subjects:
-                        render_subject_card(subj, is_tute=True)
+                        render_redesigned_subject_card(subj, is_tute=True)
 
     # FOOTER ADDITION (ALL RIGHTS RESERVED)
     st.markdown('''
