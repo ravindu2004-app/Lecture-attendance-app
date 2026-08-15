@@ -143,67 +143,118 @@ def mobile_time_picker(label, key_prefix, default_time=datetime.time(9, 0)):
 
 
 # ---------------------------------------------------------
-# 1. PAGE CONFIGURATION & STYLING
+# 1. PAGE CONFIGURATION & STYLING (ENHANCED MODERN LOOK)
 # ---------------------------------------------------------
 st.set_page_config(page_title="Lecture Attendance Tracker", page_icon="🎓", layout="wide")
 
 st.markdown("""
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+html, body, [class*="css"] {
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+}
+
 .stApp {
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-    font-family: 'Inter', sans-serif;
+    background: #090d16;
+    background-image: 
+        radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.12) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(147, 51, 234, 0.1) 0px, transparent 50%);
 }
+
+.dashboard-header {
+    background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    padding: 24px 30px;
+    margin-bottom: 25px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+}
+
+.dashboard-title {
+    font-size: 32px !important;
+    font-weight: 800 !important;
+    background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin: 0 !important;
+    letter-spacing: -0.5px;
+}
+
 .auth-card {
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(16px);
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 16px;
-    padding: 30px;
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    border-radius: 24px;
+    padding: 40px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
 }
+
 .holiday-card {
-    background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+    background: linear-gradient(135deg, #b45309 0%, #78350f 100%);
     color: white;
-    padding: 15px;
-    border-radius: 12px;
-    border-left: 6px solid #fef08a;
+    padding: 18px;
+    border-radius: 16px;
+    border-left: 6px solid #fbbf24;
     margin-bottom: 20px;
+    box-shadow: 0 10px 20px rgba(180, 83, 9, 0.2);
 }
+
 .exam-card {
-    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+    background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%);
     color: white;
-    padding: 15px;
-    border-radius: 12px;
-    border-left: 6px solid #fca5a5;
+    padding: 18px;
+    border-radius: 16px;
+    border-left: 6px solid #f87171;
     margin-bottom: 20px;
+    box-shadow: 0 10px 20px rgba(185, 28, 28, 0.2);
 }
+
 .stat-box {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 10px;
-    padding: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    margin-bottom: 10px;
+    background: rgba(30, 41, 59, 0.4);
+    border-radius: 16px;
+    padding: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    margin-bottom: 14px;
+    transition: all 0.2s ease;
 }
+
+.stat-box:hover {
+    border-color: rgba(96, 165, 250, 0.3);
+    background: rgba(30, 41, 59, 0.6);
+}
+
 div[data-testid="stSidebar"] {
-    background: #0f172a !important;
-    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    background: #0b1120 !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
 }
+
 .user-profile-box {
-    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-    padding: 15px;
-    border-radius: 14px;
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    padding: 20px;
+    border-radius: 18px;
     color: white;
     text-align: center;
     margin-bottom: 25px;
-    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+    box-shadow: 0 10px 25px rgba(37, 99, 235, 0.35);
 }
+
 .nav-header {
-    font-size: 12px;
+    font-size: 11px;
     text-transform: uppercase;
-    letter-spacing: 1.5px;
+    letter-spacing: 2px;
     color: #64748b;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
     font-weight: 700;
+}
+
+.footer-text {
+    text-align: center;
+    color: #64748b;
+    font-size: 13px;
+    padding: 30px 0 10px 0;
+    margin-top: 40px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 </style>
 """, unsafe_allow_html=True)
@@ -282,10 +333,8 @@ def calculate_subject_stats(subj, cfg, absent_records):
     absences = sum(1 for rec in absent_records if f"_{subj}_" in rec)
     attended = max(0, past_conducted_lectures - absences)
     
-    # Calculate Attendance Percentage accurately
     curr_percentage = (attended / past_conducted_lectures * 100) if past_conducted_lectures > 0 else 100.0
     
-    # FIX: Minimum required lectures to strictly maintain >= 80% attendance overall
     min_required_attendance = math.ceil(total_lectures * 0.80)
     max_allowed_absences = max(0, total_lectures - min_required_attendance)
     
@@ -304,6 +353,7 @@ def calculate_subject_stats(subj, cfg, absent_records):
     }
 
 
+# FIX: TIME UNKNOWN ISSUE RESOLVED BY RETRIEVING EXACT SESSION TIME
 def get_absence_details(rec_key, cfg):
     parts = rec_key.split('_')
     if len(parts) >= 3:
@@ -314,21 +364,33 @@ def get_absence_details(rec_key, cfg):
         date_obj = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
         day_name = date_obj.strftime("%A")
         
-        time_str = "Time Unknown"
-        
-        day_slots = [l for l in cfg["custom_timetable"].get(day_name, []) if l["subject"] == subj]
+        # Build active sessions list on that day in order
+        active_slots = []
+        regular_slots = cfg["custom_timetable"].get(day_name, [])
         cancelled_today = [c["subject"] for c in cfg.get("cancelled_lectures", []) if c["date"] == date_str]
-        active_slots = [l for l in day_slots if l["subject"] not in cancelled_today]
         
-        for ext in [e for e in cfg.get("extra_lectures", []) if e["date"] == date_str and e["subject"] == subj]:
-            active_slots.append({"subject": ext["subject"], "start_time": ext["start_time"], "end_time": ext["end_time"]})
-            
-        if idx < len(active_slots):
-            st_t = active_slots[idx]["start_time"]
-            end_t = active_slots[idx]["end_time"]
+        for slot in regular_slots:
+            if slot["subject"] not in cancelled_today:
+                active_slots.append(slot)
+                
+        for ext in cfg.get("extra_lectures", []):
+            if ext["date"] == date_str:
+                active_slots.append(ext)
+                
+        # Filter for the target subject
+        subj_slots = [s for s in active_slots if s["subject"] == subj]
+        
+        if idx < len(subj_slots):
+            st_t = subj_slots[idx]["start_time"]
+            end_t = subj_slots[idx]["end_time"]
             time_str = f"{st_t.strftime('%I:%M %p')} - {end_t.strftime('%I:%M %p')}"
+            return date_str, time_str
+        elif subj_slots:
+            st_t = subj_slots[0]["start_time"]
+            end_t = subj_slots[0]["end_time"]
+            return date_str, f"{st_t.strftime('%I:%M %p')} - {end_t.strftime('%I:%M %p')}"
             
-        return date_str, time_str
+        return date_str, "Scheduled Time"
     return "Unknown Date", "Unknown Time"
 
 
@@ -394,8 +456,8 @@ def main_app():
     with st.sidebar:
         st.markdown(f'''
             <div class="user-profile-box">
-                <h2 style="margin:0; font-size:20px;">🎓 {user_display}</h2>
-                <p style="margin:4px 0 0 0; font-size:12px; opacity:0.8;">Student Portal</p>
+                <h2 style="margin:0; font-size:18px; font-weight:700;">🎓 {user_display}</h2>
+                <p style="margin:4px 0 0 0; font-size:12px; opacity:0.85;">Student Portal</p>
             </div>
         ''', unsafe_allow_html=True)
         
@@ -427,7 +489,12 @@ def main_app():
 
     # STEP 1: INITIAL SETUP IF NOT COMPLETED
     if not cfg["setup_complete"] or nav_mode == "⚙️ Timetable Setup":
-        st.markdown("<h1 style='color: white;'>⚙️ Semester & Timetable Setup</h1>", unsafe_allow_html=True)
+        st.markdown('''
+            <div class="dashboard-header">
+                <h1 class="dashboard-title">⚙️ Semester & Timetable Setup</h1>
+                <p style="color: #94a3b8; margin: 4px 0 0 0; font-size: 14px;">Configure your academic semester timeline and weekly lecture schedules.</p>
+            </div>
+        ''', unsafe_allow_html=True)
         
         c1, c2 = st.columns(2)
         start_d = c1.date_input("Semester Start Date", value=cfg["start_date"])
@@ -485,7 +552,12 @@ def main_app():
 
     # NAVIGATION 2: CANCEL / EXTRA LECTURES
     elif nav_mode == "🚫 Cancel / Extra Lectures":
-        st.markdown("<h1 style='color: white;'>🛠️ Manage Cancelled & Extra Lectures</h1>", unsafe_allow_html=True)
+        st.markdown('''
+            <div class="dashboard-header">
+                <h1 class="dashboard-title">🛠️ Manage Cancelled & Extra Lectures</h1>
+                <p style="color: #94a3b8; margin: 4px 0 0 0; font-size: 14px;">Adjust scheduled lectures or add special make-up classes.</p>
+            </div>
+        ''', unsafe_allow_html=True)
         
         tab_cancel, tab_extra = st.tabs(["🚫 Cancel a Scheduled Lecture", "➕ Add an Extra Lecture"])
         
@@ -572,7 +644,12 @@ def main_app():
 
     # NAVIGATION 1: DAILY ATTENDANCE & SUBJECT PROGRESS
     elif nav_mode == "🎓 Daily Attendance":
-        st.markdown("<h1 style='color: white;'>🎓 Lecture Attendance Dashboard</h1>", unsafe_allow_html=True)
+        st.markdown('''
+            <div class="dashboard-header">
+                <h1 class="dashboard-title">🎓 Lecture Attendance Dashboard</h1>
+                <p style="color: #94a3b8; margin: 4px 0 0 0; font-size: 14px;">Track your daily attendance and ensure minimum 80% criteria per subject.</p>
+            </div>
+        ''', unsafe_allow_html=True)
         
         col_main, col_stats = st.columns([2.2, 1.4])
 
@@ -600,12 +677,18 @@ def main_app():
             if not active_lectures:
                 st.info("No lectures scheduled for this date!")
             else:
-                for idx, lec in enumerate(active_lectures):
+                # Count index per subject for accurate unique key generation
+                subj_counter = {}
+                for lec in active_lectures:
                     subj = lec["subject"]
+                    subj_counter[subj] = subj_counter.get(subj, 0)
+                    subj_idx = subj_counter[subj]
+                    subj_counter[subj] += 1
+
                     formatted_time = f"{lec['start_time'].strftime('%I:%M %p')} - {lec['end_time'].strftime('%I:%M %p')}"
                     extra_tag = " (Extra Class)" if lec.get("is_extra") else ""
                     
-                    record_key = f"{selected_str}_{subj}_{idx}"
+                    record_key = f"{selected_str}_{subj}_{subj_idx}"
                     is_absent = record_key in st.session_state['absent_records']
 
                     st.markdown('<div class="stat-box">', unsafe_allow_html=True)
@@ -656,7 +739,6 @@ def main_app():
                         else:
                             st.error(f"🚨 **Warning:** Below 80%! Attend upcoming classes to recover!")
 
-                        # TOUCH TO VIEW POP-UP MODAL BUTTON
                         st.write(" ")
                         if st.button(f"🔍 View / Edit Absent Dates", key=f"btn_pop_{subj}", use_container_width=True):
                             open_subject_modal(subj, cfg, username)
@@ -672,12 +754,19 @@ def main_app():
                     for subj in tutorial_subjects:
                         render_subject_card(subj, is_tute=True)
 
+    # FOOTER ADDITION (ALL RIGHTS RESERVED)
+    st.markdown('''
+        <div class="footer-text">
+            © 2026 Lecture Attendance Tracker System. All Rights Reserved.
+        </div>
+    ''', unsafe_allow_html=True)
+
 
 # ---------------------------------------------------------
 # 5. AUTHENTICATION SYSTEM (LOGIN / REGISTER)
 # ---------------------------------------------------------
 def auth_interface():
-    st.markdown("<h1 style='text-align: center; color: white;'>🎓 Lecture Attendance App</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center; color: white; margin-bottom: 25px;'>🎓 Lecture Attendance App</h1>", unsafe_allow_html=True)
     
     col1, col2 = st.columns(2)
     with col1:
@@ -738,6 +827,12 @@ def auth_interface():
                 else:
                     st.error("Username already taken! Try another one.")
         st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown('''
+        <div class="footer-text">
+            © 2026 Lecture Attendance Tracker System. All Rights Reserved.
+        </div>
+    ''', unsafe_allow_html=True)
 
 
 # ---------------------------------------------------------
