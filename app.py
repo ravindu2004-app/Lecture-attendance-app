@@ -156,10 +156,10 @@ html, body, [class*="css"] {
 }
 
 .stApp {
-    background: #090d16;
+    background: #0b0f19;
     background-image: 
-        radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.12) 0px, transparent 50%),
-        radial-gradient(at 100% 100%, rgba(147, 51, 234, 0.1) 0px, transparent 50%);
+        radial-gradient(at 20% 10%, rgba(244, 63, 94, 0.08) 0px, transparent 40%),
+        radial-gradient(at 80% 90%, rgba(99, 102, 241, 0.08) 0px, transparent 40%);
 }
 
 .dashboard-header {
@@ -175,38 +175,52 @@ html, body, [class*="css"] {
 .dashboard-title {
     font-size: 34px !important;
     font-weight: 800 !important;
-    background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+    background: linear-gradient(135deg, #f43f5e 0%, #fb7185 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     margin: 0 !important;
     letter-spacing: -0.5px;
 }
 
-/* AUTHENTICATION PROFESSIONAL CARD */
+/* AUTHENTICATION PROFESSIONAL ULTRA-CARD */
 .auth-container {
-    background: linear-gradient(145deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.85) 100%);
+    background: linear-gradient(145deg, rgba(23, 31, 48, 0.7) 0%, rgba(13, 18, 30, 0.9) 100%);
     backdrop-filter: blur(24px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 28px;
-    padding: 45px;
-    box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 24px;
+    padding: 38px 32px 32px 32px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+}
+
+.auth-header-box {
+    background: linear-gradient(135deg, rgba(244, 63, 94, 0.1) 0%, rgba(99, 102, 241, 0.08) 100%);
+    border: 1px solid rgba(244, 63, 94, 0.2);
+    border-radius: 20px;
+    padding: 26px 20px;
+    text-align: center;
+    margin-bottom: 25px;
 }
 
 .auth-header-title {
-    font-size: 30px;
+    font-size: 28px;
     font-weight: 800;
     text-align: center;
-    background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%);
+    background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
 }
 
 .auth-subtitle {
     text-align: center;
     color: #94a3b8;
-    font-size: 14px;
-    margin-bottom: 28px;
+    font-size: 13px;
+    font-weight: 500;
+    margin: 0;
 }
 
 /* ATTENDANCE SECTION CARDS */
@@ -229,14 +243,14 @@ html, body, [class*="css"] {
 }
 
 .lecture-item-box:hover {
-    border-color: rgba(96, 165, 250, 0.4);
+    border-color: rgba(244, 63, 94, 0.4);
     background: rgba(255, 255, 255, 0.05);
 }
 
 /* CUSTOM MODERN SUBJECT CARD STYLES */
 .subject-card-main {
     background: linear-gradient(145deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.8) 100%);
-    border: 1px solid rgba(59, 130, 246, 0.25);
+    border: 1px solid rgba(244, 63, 94, 0.25);
     border-radius: 20px;
     padding: 22px;
     margin-bottom: 20px;
@@ -351,13 +365,13 @@ div[data-testid="stSidebar"] {
 }
 
 .user-profile-box {
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
     padding: 20px;
     border-radius: 18px;
     color: white;
     text-align: center;
     margin-bottom: 25px;
-    box-shadow: 0 10px 25px rgba(37, 99, 235, 0.35);
+    box-shadow: 0 10px 25px rgba(244, 63, 94, 0.35);
 }
 
 .nav-header {
@@ -751,7 +765,7 @@ def main_app():
             else:
                 st.info("No extra lectures scheduled.")
 
-    # NAVIGATION 1: DAILY ATTENDANCE & SUBJECT PROGRESS (PROFESSIONAL REDESIGN)
+    # NAVIGATION 1: DAILY ATTENDANCE & SUBJECT PROGRESS
     elif nav_mode == "🎓 Daily Attendance":
         st.markdown('''
             <div class="dashboard-header">
@@ -804,7 +818,7 @@ def main_app():
                     st.markdown('<div class="lecture-item-box">', unsafe_allow_html=True)
                     c_info, c_chk = st.columns([3, 1])
                     with c_info:
-                        st.markdown(f"<span style='font-size:16px; font-weight:700; color:#f8fafc;'>📖 {subj}</span><span style='color:#a78bfa; font-weight:600;'>{extra_tag}</span>", unsafe_allow_html=True)
+                        st.markdown(f"<span style='font-size:16px; font-weight:700; color:#f8fafc;'>📖 {subj}</span><span style='color:#fb7185; font-weight:600;'>{extra_tag}</span>", unsafe_allow_html=True)
                         st.markdown(f"<span style='font-size:13px; color:#94a3b8;'>⏰ {formatted_time}</span>", unsafe_allow_html=True)
                     with c_chk:
                         absent_marked = st.checkbox("Mark Absent", value=is_absent, key=f"chk_{record_key}", disabled=is_holiday or is_mid_exam)
@@ -887,7 +901,7 @@ def main_app():
 
 
 # ---------------------------------------------------------
-# 5. AUTHENTICATION (LOGIN / REGISTER) ENTRY POINT (PROFESSIONAL REDESIGN)
+# 5. AUTHENTICATION (LOGIN / REGISTER) ENTRY POINT (PRO REDESIGN)
 # ---------------------------------------------------------
 if not st.session_state['logged_in']:
     st.markdown("<br><br>", unsafe_allow_html=True)
@@ -896,8 +910,10 @@ if not st.session_state['logged_in']:
     with c_center:
         st.markdown('''
             <div class="auth-container">
-                <div class="auth-header-title">🎓 Academic Portal</div>
-                <div class="auth-subtitle">Lecture Attendance & Academic Management System</div>
+                <div class="auth-header-box">
+                    <div class="auth-header-title">🎓 Academic Portal</div>
+                    <div class="auth-subtitle">Lecture Attendance & Academic Management System</div>
+                </div>
         ''', unsafe_allow_html=True)
         
         auth_choice = st.radio("Select Action:", ["Login", "Register"], horizontal=True, label_visibility="collapsed")
