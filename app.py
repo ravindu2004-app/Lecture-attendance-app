@@ -7,7 +7,7 @@ import sqlite3
 import json
 
 # ---------------------------------------------------------
-# 0. DATABASE INITIALIZATION & HELPER FUNCTIONS
+# 0. DATABASE INITIALIZATION & HELPER FUNCTIONS (UNCHANGED)
 # ---------------------------------------------------------
 def init_db():
     conn = sqlite3.connect('attendance_app.db')
@@ -112,7 +112,7 @@ def save_absents_db(username, absent_set):
     conn.close()
 
 # ---------------------------------------------------------
-# MOBILE TOUCH-FRIENDLY TIME PICKER HELPER
+# MOBILE TOUCH-FRIENDLY TIME PICKER HELPER (UNCHANGED)
 # ---------------------------------------------------------
 def mobile_time_picker(label, key_prefix, default_time=datetime.time(9, 0)):
     st.write(f"**{label}**")
@@ -141,7 +141,7 @@ def mobile_time_picker(label, key_prefix, default_time=datetime.time(9, 0)):
     return datetime.time(h24, int(selected_m))
 
 # ---------------------------------------------------------
-# 1. PAGE CONFIGURATION & ANIMATED STYLING
+# 1. PAGE CONFIGURATION & HIGH-END ACADEMIC SYSTEM STYLING
 # ---------------------------------------------------------
 st.set_page_config(page_title="Academic Portal & Attendance Tracker", page_icon="🎓", layout="wide")
 
@@ -154,18 +154,19 @@ html, body, [class*="css"] {
 }
 
 .stApp {
-    background: #080d1a;
+    background: #060913;
     background-image: 
-        radial-gradient(at 0% 0%, rgba(244, 63, 94, 0.12) 0px, transparent 45%),
-        radial-gradient(at 100% 100%, rgba(99, 102, 241, 0.12) 0px, transparent 45%),
-        radial-gradient(at 50% 50%, rgba(15, 23, 42, 0.5) 0px, transparent 100%);
+        radial-gradient(at 10% 10%, rgba(244, 63, 94, 0.12) 0px, transparent 50%),
+        radial-gradient(at 90% 90%, rgba(99, 102, 241, 0.12) 0px, transparent 50%),
+        radial-gradient(at 50% 50%, rgba(15, 23, 42, 0.6) 0px, transparent 100%);
+    background-attachment: fixed;
 }
 
-/* KEYFRAME ANIMATIONS */
+/* HIGH-PERFORMANCE KEYFRAME ANIMATIONS */
 @keyframes fadeInUp {
     from {
         opacity: 0;
-        transform: translateY(24px) scale(0.98);
+        transform: translateY(20px) scale(0.98);
     }
     to {
         opacity: 1;
@@ -174,29 +175,29 @@ html, body, [class*="css"] {
 }
 
 @keyframes pulseGlow {
-    0% { box-shadow: 0 0 15px rgba(244, 63, 94, 0.2); }
-    50% { box-shadow: 0 0 30px rgba(244, 63, 94, 0.4); }
-    100% { box-shadow: 0 0 15px rgba(244, 63, 94, 0.2); }
+    0% { box-shadow: 0 0 20px rgba(244, 63, 94, 0.15); border-color: rgba(244, 63, 94, 0.25); }
+    50% { box-shadow: 0 0 35px rgba(244, 63, 94, 0.35); border-color: rgba(244, 63, 94, 0.5); }
+    100% { box-shadow: 0 0 20px rgba(244, 63, 94, 0.15); border-color: rgba(244, 63, 94, 0.25); }
 }
 
 /* AUTHENTICATION ANIMATED ULTRA CARD */
 .auth-animated-card {
-    background: linear-gradient(165deg, rgba(20, 27, 45, 0.85) 0%, rgba(10, 15, 29, 0.95) 100%);
+    background: linear-gradient(165deg, rgba(17, 24, 39, 0.85) 0%, rgba(9, 14, 26, 0.95) 100%);
     backdrop-filter: blur(30px);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 28px;
-    padding: 36px 32px;
-    box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(255, 255, 255, 0.1);
-    animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    padding: 38px 34px;
+    box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.85), inset 0 1px 1px rgba(255, 255, 255, 0.12);
+    animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .auth-header-box {
     background: linear-gradient(135deg, rgba(244, 63, 94, 0.12) 0%, rgba(99, 102, 241, 0.1) 100%);
-    border: 1px solid rgba(244, 63, 94, 0.25);
+    border: 1px solid rgba(244, 63, 94, 0.3);
     border-radius: 20px;
     padding: 24px 20px;
     text-align: center;
-    margin-bottom: 24px;
+    margin-bottom: 26px;
     animation: pulseGlow 4s infinite ease-in-out;
 }
 
@@ -221,14 +222,14 @@ html, body, [class*="css"] {
 
 /* MAIN DASHBOARD HEADER */
 .dashboard-header {
-    background: linear-gradient(135deg, rgba(23, 32, 54, 0.7) 0%, rgba(13, 18, 32, 0.85) 100%);
+    background: linear-gradient(135deg, rgba(20, 29, 47, 0.75) 0%, rgba(10, 15, 26, 0.9) 100%);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 24px;
     padding: 28px 36px;
     margin-bottom: 25px;
     box-shadow: 0 20px 40px rgba(0,0,0,0.5);
     backdrop-filter: blur(20px);
-    animation: fadeInUp 0.5s ease-out;
+    animation: fadeInUp 0.4s ease-out;
 }
 
 .dashboard-title {
@@ -243,13 +244,13 @@ html, body, [class*="css"] {
 
 /* TRACKER & SUBJECT CARDS WITH ANIMATED HOVER */
 .tracker-card {
-    background: linear-gradient(145deg, rgba(23, 31, 50, 0.6) 0%, rgba(13, 18, 30, 0.8) 100%);
+    background: linear-gradient(145deg, rgba(20, 27, 45, 0.65) 0%, rgba(11, 16, 28, 0.85) 100%);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 24px;
-    padding: 26px;
+    padding: 28px;
     margin-bottom: 24px;
     backdrop-filter: blur(16px);
-    animation: fadeInUp 0.5s ease-out;
+    animation: fadeInUp 0.4s ease-out;
 }
 
 .lecture-item-box {
@@ -264,8 +265,8 @@ html, body, [class*="css"] {
 .lecture-item-box:hover {
     transform: translateY(-2px);
     border-color: rgba(244, 63, 94, 0.4);
-    background: rgba(255, 255, 255, 0.04);
-    box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.3);
+    background: rgba(255, 255, 255, 0.045);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
 }
 
 .subject-card-main, .subject-card-tute {
@@ -274,18 +275,18 @@ html, body, [class*="css"] {
     margin-bottom: 22px;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     backdrop-filter: blur(14px);
-    animation: fadeInUp 0.6s ease-out;
+    animation: fadeInUp 0.5s ease-out;
 }
 
 .subject-card-main {
-    background: linear-gradient(145deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.85) 100%);
+    background: linear-gradient(145deg, rgba(26, 36, 56, 0.75) 0%, rgba(13, 19, 35, 0.9) 100%);
     border: 1px solid rgba(244, 63, 94, 0.25);
     box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.4);
 }
 
 .subject-card-main:hover {
     transform: translateY(-3px);
-    border-color: rgba(244, 63, 94, 0.5);
+    border-color: rgba(244, 63, 94, 0.55);
     box-shadow: 0 20px 40px -10px rgba(244, 63, 94, 0.25);
 }
 
@@ -297,8 +298,8 @@ html, body, [class*="css"] {
 
 .subject-card-tute:hover {
     transform: translateY(-3px);
-    border-color: rgba(168, 85, 247, 0.6);
-    box-shadow: 0 20px 40px -10px rgba(168, 85, 247, 0.3);
+    border-color: rgba(168, 85, 247, 0.65);
+    box-shadow: 0 20px 40px -10px rgba(168, 85, 247, 0.35);
 }
 
 .card-header-flex {
@@ -394,7 +395,7 @@ html, body, [class*="css"] {
 }
 
 div[data-testid="stSidebar"] {
-    background: #080d1a !important;
+    background: #060913 !important;
     border-right: 1px solid rgba(255, 255, 255, 0.06);
 }
 
@@ -420,7 +421,7 @@ div[data-testid="stSidebar"] {
 """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# 2. CONSTANTS & SESSION STATE INITIALIZATION
+# 2. CONSTANTS & SESSION STATE INITIALIZATION (UNCHANGED)
 # ---------------------------------------------------------
 HOLIDAYS_DB = {
     "2026-01-03": "Duruthu Full Moon Poya Day", "2026-01-15": "Tamil Thai Pongal Day",
@@ -452,7 +453,7 @@ if 'nav_mode' not in st.session_state:
     st.session_state['nav_mode'] = "🎓 Daily Attendance"
 
 # ---------------------------------------------------------
-# 3. ACCURATE STATS CALCULATION (STRICT 80% THRESHOLD)
+# 3. ACCURATE STATS CALCULATION & DIALOGS (UNCHANGED)
 # ---------------------------------------------------------
 def calculate_subject_stats(subj, cfg, absent_records):
     start_d = cfg["start_date"]
@@ -547,9 +548,6 @@ def get_absence_details(rec_key, cfg):
         return date_str, "Scheduled Time"
     return "Unknown Date", "Unknown Time"
 
-# ---------------------------------------------------------
-# DIALOG MODAL FOR SUBJECT DETAILS
-# ---------------------------------------------------------
 @st.dialog("📅 Absent Records & Lecture History")
 def open_subject_modal(subj, cfg, username):
     st.markdown(f"### 📚 Subject: **{subj}**")
@@ -579,7 +577,7 @@ def open_subject_modal(subj, cfg, username):
             st.markdown('</div>', unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# 4. MAIN DASHBOARD & APPLICATION LOGIC
+# 4. MAIN DASHBOARD & APPLICATION LOGIC (UNCHANGED)
 # ---------------------------------------------------------
 def main_app():
     username = st.session_state['current_username']
@@ -872,7 +870,6 @@ def main_app():
                 main_subjects = [s for s in all_subjects if not ("tutorial" in s.lower() or "tute" in s.lower())]
                 tutorial_subjects = [s for s in all_subjects if ("tutorial" in s.lower() or "tute" in s.lower())]
 
-                # REDESIGNED MODERN CARD RENDERING FUNCTION
                 def render_redesigned_subject_card(subj, is_tute=False):
                     stats = calculate_subject_stats(subj, cfg, st.session_state['absent_records'])
                     card_class = "subject-card-tute" if is_tute else "subject-card-main"
@@ -929,7 +926,7 @@ def main_app():
                         render_redesigned_subject_card(s, is_tute=True)
 
 # ---------------------------------------------------------
-# 5. AUTHENTICATION ENTRY POINT WITH ANIMATIONS
+# 5. AUTHENTICATION ENTRY POINT WITH ANIMATIONS (UNCHANGED)
 # ---------------------------------------------------------
 if not st.session_state['logged_in']:
     st.markdown("<br>", unsafe_allow_html=True)
