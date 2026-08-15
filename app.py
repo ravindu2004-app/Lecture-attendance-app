@@ -64,12 +64,19 @@ def check_login_db(username, password):
     return user[0] if user else None
 
 def load_user_config_db(username, term_key):
+    init_db()
     conn = sqlite3.connect('attendance_app.db')
     c = conn.cursor()
     clean_u = username.strip().lower()
-    c.execute("SELECT config_json FROM user_configs WHERE username=? AND term_key=?", (clean_u, term_key))
-    row = c.fetchone()
+    try:
+        c.execute("SELECT config_json FROM user_configs WHERE username=? AND term_key=?", (clean_u, term_key))
+        row = c.fetchone()
+    except sqlite3.OperationalError:
+        init_db()
+        c.execute("SELECT config_json FROM user_configs WHERE username=? AND term_key=?", (clean_u, term_key))
+        row = c.fetchone()
     conn.close()
+    
     if row:
         data = json.loads(row[0])
         data["start_date"] = datetime.datetime.strptime(data["start_date"], "%Y-%m-%d").date()
@@ -88,6 +95,7 @@ def load_user_config_db(username, term_key):
     return None
 
 def save_user_config_db(username, term_key, config):
+    init_db()
     conn = sqlite3.connect('attendance_app.db')
     c = conn.cursor()
     clean_u = username.strip().lower()
@@ -97,15 +105,22 @@ def save_user_config_db(username, term_key, config):
     conn.close()
 
 def load_absents_db(username, term_key):
+    init_db()
     conn = sqlite3.connect('attendance_app.db')
     c = conn.cursor()
     clean_u = username.strip().lower()
-    c.execute("SELECT record_key FROM absent_records WHERE username=? AND term_key=?", (clean_u, term_key))
-    rows = c.fetchall()
+    try:
+        c.execute("SELECT record_key FROM absent_records WHERE username=? AND term_key=?", (clean_u, term_key))
+        rows = c.fetchall()
+    except sqlite3.OperationalError:
+        init_db()
+        c.execute("SELECT record_key FROM absent_records WHERE username=? AND term_key=?", (clean_u, term_key))
+        rows = c.fetchall()
     conn.close()
     return set(r[0] for r in rows)
 
 def save_absents_db(username, term_key, absent_set):
+    init_db()
     conn = sqlite3.connect('attendance_app.db')
     c = conn.cursor()
     clean_u = username.strip().lower()
