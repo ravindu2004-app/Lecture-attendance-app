@@ -436,9 +436,9 @@ div.stButton > button[kind="primary"]:hover {
     background: rgba(16, 185, 129, 0.1);
     border: 1px solid rgba(16, 185, 129, 0.25);
     border-radius: 10px;
-    padding: 8px 12px;
-    margin-top: 10px;
-    font-size: 12px;
+    padding: 10px 14px;
+    margin-top: 12px;
+    font-size: 13px;
     color: #6ee7b7;
     font-weight: 500;
 }
@@ -450,9 +450,9 @@ div.stButton > button[kind="primary"]:hover {
     background: rgba(244, 63, 94, 0.1);
     border: 1px solid rgba(244, 63, 94, 0.25);
     border-radius: 10px;
-    padding: 8px 12px;
-    margin-top: 10px;
-    font-size: 12px;
+    padding: 10px 14px;
+    margin-top: 12px;
+    font-size: 13px;
     color: #fda4af;
     font-weight: 500;
 }
@@ -1032,45 +1032,37 @@ def main_app():
                     badge_html = f'<span class="badge-green">Eligible ({stats["percentage"]:.1f}%)</span>' if is_eligible else f'<span class="badge-red">At Risk ({stats["percentage"]:.1f}%)</span>'
                     
                     if stats["safe_left"] >= 0:
-                        status_badge_html = f'''
-                            <div class="status-badge-safe">
-                                <span style="font-size: 14px;">🟢</span> Safe to miss <strong>{stats["safe_left"]}</strong> more lecture(s).
-                            </div>
-                        '''
+                        status_badge_html = f'<div class="status-badge-safe"><span style="font-size: 14px;">🟢</span> Safe to miss <strong>{stats["safe_left"]}</strong> more lecture(s).</div>'
                     else:
-                        status_badge_html = f'''
-                            <div class="status-badge-warning">
-                                <span style="font-size: 14px;">🚨</span> Must attend <strong>{abs(stats["safe_left"])}</strong> future class(es) to recover!
-                            </div>
-                        '''
+                        status_badge_html = f'<div class="status-badge-warning"><span style="font-size: 14px;">🚨</span> Must attend <strong>{abs(stats["safe_left"])}</strong> future class(es) to recover!</div>'
 
-                    st.markdown(f'''
-                        <div class="{card_class}">
-                            <div class="card-header-flex">
-                                <h3 class="subject-title">{subj}</h3>
-                                {badge_html}
-                            </div>
-                            <div class="metrics-grid">
-                                <div class="metric-item">
-                                    <div class="metric-label">Conducted</div>
-                                    <div class="metric-val">{stats["attended"]} / {stats["past_conducted"]}</div>
-                                </div>
-                                <div class="metric-item">
-                                    <div class="metric-label">Cuts / Absences</div>
-                                    <div class="metric-val" style="color:#fb7185;">{stats["absences"]}</div>
-                                </div>
-                                <div class="metric-item">
-                                    <div class="metric-label">Max Allowed Cuts</div>
-                                    <div class="metric-val">{stats["max_allowed"]}</div>
-                                </div>
-                                <div class="metric-item">
-                                    <div class="metric-label">Total Semester</div>
-                                    <div class="metric-val">{stats["total"]}</div>
-                                </div>
-                            </div>
-                            {status_badge_html}
-                        </div>
-                    ''', unsafe_allow_html=True)
+                    card_html = f'''<div class="{card_class}">
+<div class="card-header-flex">
+<h3 class="subject-title">{subj}</h3>
+{badge_html}
+</div>
+<div class="metrics-grid">
+<div class="metric-item">
+<div class="metric-label">Conducted</div>
+<div class="metric-val">{stats["attended"]} / {stats["past_conducted"]}</div>
+</div>
+<div class="metric-item">
+<div class="metric-label">Cuts / Absences</div>
+<div class="metric-val" style="color:#fb7185;">{stats["absences"]}</div>
+</div>
+<div class="metric-item">
+<div class="metric-label">Max Allowed Cuts</div>
+<div class="metric-val">{stats["max_allowed"]}</div>
+</div>
+<div class="metric-item">
+<div class="metric-label">Total Semester</div>
+<div class="metric-val">{stats["total"]}</div>
+</div>
+</div>
+{status_badge_html}
+</div>'''
+
+                    st.markdown(card_html, unsafe_allow_html=True)
                     
                     if st.button(f"🔍 View History / Manage Absences", key=f"btn_mod_{subj}", use_container_width=True):
                         open_subject_modal(subj, cfg, username)
