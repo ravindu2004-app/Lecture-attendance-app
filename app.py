@@ -68,7 +68,6 @@ def load_user_config_db(username):
     conn.close()
     if row:
         data = json.loads(row[0])
-        # Handle multi-semester data structure upgrade safely if old structure exists
         if "custom_timetables" not in data:
             old_timetable = data.get("custom_timetable", {day: [] for day in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]})
             old_subjects = data.get("subjects_pool", sorted(list(set(l["subject"] for day in old_timetable for l in old_timetable[day]))))
@@ -85,7 +84,6 @@ def load_user_config_db(username):
             data["selected_year"] = "Year 1"
             data["selected_semester"] = "Semester 1"
 
-        # Parse dates and times for all years and semesters
         for yr in data["custom_timetables"]:
             for sem in data["custom_timetables"][yr]:
                 sem_data = data["custom_timetables"][yr][sem]
@@ -1061,7 +1059,6 @@ def main_app():
             else:
                 st.markdown(f"### 📋 Lectures for {d_name} ({d_str})")
                 
-                # Count slot occurrences per subject for unique keys
                 subj_occurrence_counts = {}
                 
                 for idx, slot in enumerate(active_slots):
@@ -1109,6 +1106,11 @@ def main_app():
 # 5. AUTHENTICATION UI & ENTRYPOINT
 # ---------------------------------------------------------
 def auth_screen():
+    # Persistent Remember Me Credentials via Browser Query Parameters / Local State
+    query_params = st.query_params
+    saved_user_param = query_params.get("saved_user", "")
+    saved_pass_param = query_params.get("saved_pass", "")
+
     col1, col2, col3 = st.columns([1, 1.4, 1])
     with col2:
         st.markdown('<div class="auth-animated-card">', unsafe_allow_html=True)
@@ -1122,8 +1124,9 @@ def auth_screen():
         tab_l, tab_r = st.tabs(["🔐 Login", "📝 Register"])
 
         with tab_l:
-            l_user = st.text_input("Username", key="login_username")
-            l_pass = st.text_input("Password", type="password", key="login_password")
+            l_user = st.text_input("Username", value=saved_user_param, key="login_username")
+            l_pass = st.text_input("Password", value=saved_pass_param, type="password", key="login_password")
+            remember_me = st.checkbox("Remember Me on this Device", value=bool(saved_user_param))
             st.write("")
             if st.button("Login to Portal", use_container_width=True, type="primary"):
                 if not l_user or not l_pass:
@@ -1134,6 +1137,17 @@ def auth_screen():
                         st.session_state['logged_in'] = True
                         st.session_state['current_user'] = name_found
                         st.session_state['current_username'] = l_user.strip().lower()
+                        
+                        # Save or clear credentials in query parameters for session persistence
+                        if remember_me:
+                            st.query_params["saved_user"] = l_user.strip()
+                            st.query_params["saved_pass"] = l_pass
+                        else:
+                            if "saved_user" in st.query_params:
+                                del st.query_params["saved_user"]
+                            if "saved_pass" in st.query_params:
+                                del st.query_params["saved_pass"]
+
                         st.success("Login Successful!")
                         time.sleep(0.4)
                         st.rerun()
