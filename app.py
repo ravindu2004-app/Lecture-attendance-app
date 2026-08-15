@@ -7,7 +7,7 @@ import sqlite3
 import json
 
 # ---------------------------------------------------------
-# 0. DATABASE INITIALIZATION & HELPER FUNCTIONS (UNCHANGED)
+# 0. DATABASE INITIALIZATION & HELPER FUNCTIONS
 # ---------------------------------------------------------
 def init_db():
     conn = sqlite3.connect('attendance_app.db')
@@ -112,7 +112,7 @@ def save_absents_db(username, absent_set):
     conn.close()
 
 # ---------------------------------------------------------
-# MOBILE TOUCH-FRIENDLY TIME PICKER HELPER (UNCHANGED)
+# MOBILE TOUCH-FRIENDLY TIME PICKER HELPER
 # ---------------------------------------------------------
 def mobile_time_picker(label, key_prefix, default_time=datetime.time(9, 0)):
     st.write(f"**{label}**")
@@ -220,7 +220,7 @@ html, body, [class*="css"] {
     font-weight: 500;
 }
 
-/* PRIMARY BUTTONS RE-STYLED TO BLUE/INDIGO */
+/* PRIMARY BUTTONS */
 div.stButton > button[kind="primary"] {
     background: linear-gradient(135deg, #4f46e5 0%, #0284c7 100%) !important;
     border: none !important;
@@ -258,80 +258,62 @@ div.stButton > button[kind="primary"]:hover {
     letter-spacing: -0.5px;
 }
 
-/* FULLY RESPONSIVE QUICK INSIGHTS WIDGET */
-.insights-banner {
-    background: linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.8) 100%);
-    border: 1px solid rgba(56, 189, 248, 0.2);
-    border-radius: 16px;
-    padding: 16px 20px;
+/* OVERVIEW PAGE WIDGETS */
+.insights-banner-page {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    border-radius: 20px;
+    padding: 28px;
     margin-bottom: 24px;
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 16px;
+    gap: 20px;
     align-items: center;
-    backdrop-filter: blur(12px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+    backdrop-filter: blur(16px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
     animation: fadeInUp 0.45s ease-out;
-    width: 100%;
-    box-sizing: border-box;
 }
 
-.insight-item {
+.insight-item-page {
     display: flex;
     align-items: center;
-    gap: 12px;
-    min-width: 0;
+    gap: 16px;
+    background: rgba(255, 255, 255, 0.02);
+    padding: 16px 20px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.insight-icon {
-    font-size: 20px;
-    background: rgba(56, 189, 248, 0.1);
-    padding: 10px;
-    border-radius: 12px;
+.insight-icon-page {
+    font-size: 24px;
+    background: rgba(56, 189, 248, 0.12);
+    padding: 12px;
+    border-radius: 14px;
     color: #38bdf8;
-    border: 1px solid rgba(56, 189, 248, 0.2);
+    border: 1px solid rgba(56, 189, 248, 0.25);
     flex-shrink: 0;
 }
 
-.insight-content {
-    min-width: 0;
-    overflow: hidden;
-}
-
-.insight-label {
-    font-size: 10px;
+.insight-label-page {
+    font-size: 11px;
     color: #94a3b8;
     text-transform: uppercase;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.insight-val {
-    font-size: 15px;
     font-weight: 700;
-    color: #f8fafc;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    letter-spacing: 0.6px;
+    margin-bottom: 2px;
 }
 
-/* MOBILE RESPONSIVE MEDIA QUERY */
+.insight-val-page {
+    font-size: 20px;
+    font-weight: 800;
+    color: #f8fafc;
+}
+
 @media (max-width: 768px) {
-    .insights-banner {
+    .insights-banner-page {
         grid-template-columns: 1fr;
-        gap: 12px;
-        padding: 14px 16px;
-    }
-    
-    .insight-item {
-        width: 100%;
-        background: rgba(255, 255, 255, 0.02);
-        padding: 8px 12px;
-        border-radius: 12px;
-        border: 1px solid rgba(255, 255, 255, 0.04);
+        gap: 14px;
+        padding: 18px;
     }
 }
 
@@ -376,22 +358,10 @@ div.stButton > button[kind="primary"]:hover {
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
 }
 
-.subject-card-main:hover {
-    transform: translateY(-3px);
-    border-color: rgba(99, 102, 241, 0.55);
-    box-shadow: 0 15px 35px -10px rgba(99, 102, 241, 0.25);
-}
-
 .subject-card-tute {
     background: linear-gradient(145deg, rgba(30, 27, 75, 0.65) 0%, rgba(15, 23, 42, 0.9) 100%);
     border: 1px solid rgba(168, 85, 247, 0.3);
     box-shadow: 0 10px 25px -5px rgba(88, 28, 135, 0.25);
-}
-
-.subject-card-tute:hover {
-    transform: translateY(-3px);
-    border-color: rgba(168, 85, 247, 0.65);
-    box-shadow: 0 15px 35px -10px rgba(168, 85, 247, 0.35);
 }
 
 .card-header-flex {
@@ -458,6 +428,35 @@ div.stButton > button[kind="primary"]:hover {
     color: #f1f5f9;
 }
 
+/* PROFESSIONAL SAFE / WARNING BADGES */
+.status-badge-safe {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    border-radius: 10px;
+    padding: 8px 12px;
+    margin-top: 10px;
+    font-size: 12px;
+    color: #6ee7b7;
+    font-weight: 500;
+}
+
+.status-badge-warning {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(244, 63, 94, 0.1);
+    border: 1px solid rgba(244, 63, 94, 0.25);
+    border-radius: 10px;
+    padding: 8px 12px;
+    margin-top: 10px;
+    font-size: 12px;
+    color: #fda4af;
+    font-weight: 500;
+}
+
 .holiday-card {
     background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
     color: white;
@@ -509,11 +508,22 @@ div[data-testid="stSidebar"] {
     margin-bottom: 12px;
     font-weight: 700;
 }
+
+/* FOOTER STYLING */
+.app-footer {
+    text-align: center;
+    padding: 24px 0 12px 0;
+    margin-top: 40px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 500;
+}
 </style>
 """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# 2. CONSTANTS & SESSION STATE INITIALIZATION (UNCHANGED)
+# 2. CONSTANTS & SESSION STATE INITIALIZATION
 # ---------------------------------------------------------
 HOLIDAYS_DB = {
     "2026-01-03": "Duruthu Full Moon Poya Day", "2026-01-15": "Tamil Thai Pongal Day",
@@ -545,7 +555,7 @@ if 'nav_mode' not in st.session_state:
     st.session_state['nav_mode'] = "🎓 Daily Attendance"
 
 # ---------------------------------------------------------
-# 3. ACCURATE STATS CALCULATION & DIALOGS (UNCHANGED)
+# 3. ACCURATE STATS CALCULATION & DIALOGS
 # ---------------------------------------------------------
 def calculate_subject_stats(subj, cfg, absent_records):
     start_d = cfg["start_date"]
@@ -707,6 +717,7 @@ def main_app():
         
         menu_items = [
             ("🎓 Daily Attendance", "🎓 Daily Attendance"),
+            ("📊 Overall Overview", "📊 Overall Overview"),
             ("🚫 Cancel / Extra Lectures", "🚫 Cancel / Extra Lectures"),
             ("⚙️ Timetable Setup", "⚙️ Timetable Setup")
         ]
@@ -729,7 +740,7 @@ def main_app():
 
     nav_mode = st.session_state['nav_mode']
 
-    # STEP 1: INITIAL SETUP IF NOT COMPLETED
+    # SETUP IF NOT COMPLETED
     if not cfg["setup_complete"] or nav_mode == "⚙️ Timetable Setup":
         st.markdown('''
             <div class="dashboard-header">
@@ -792,7 +803,59 @@ def main_app():
             time.sleep(0.5)
             st.rerun()
 
-    # NAVIGATION 2: CANCEL / EXTRA LECTURES
+    # NAVIGATION: OVERALL OVERVIEW
+    elif nav_mode == "📊 Overall Overview":
+        st.markdown('''
+            <div class="dashboard-header">
+                <h1 class="dashboard-title">📊 Overall Academic Overview</h1>
+                <p style="color: #94a3b8; margin: 4px 0 0 0; font-size: 14px;">Summary of your current semester metrics and academic standing.</p>
+            </div>
+        ''', unsafe_allow_html=True)
+
+        all_subjects_calc = sorted(list(set(l["subject"] for day in cfg["custom_timetable"] for l in cfg["custom_timetable"][day])))
+        total_p_conducted = 0
+        total_attended_all = 0
+        for s_item in all_subjects_calc:
+            s_st = calculate_subject_stats(s_item, cfg, st.session_state['absent_records'])
+            total_p_conducted += s_st["past_conducted"]
+            total_attended_all += s_st["attended"]
+        
+        overall_pct = (total_attended_all / total_p_conducted * 100) if total_p_conducted > 0 else 100.0
+        health_status = "Good Standing" if overall_pct >= 80.0 else "Action Required"
+        health_color = "#34d399" if overall_pct >= 80.0 else "#fb7185"
+
+        today_date = datetime.date.today()
+        start_d_cfg = cfg.get("start_date", today_date)
+        days_passed = (today_date - start_d_cfg).days
+        curr_week = max(1, math.ceil(days_passed / 7)) if days_passed >= 0 else 1
+
+        st.markdown(f'''
+            <div class="insights-banner-page">
+                <div class="insight-item-page">
+                    <div class="insight-icon-page">📈</div>
+                    <div>
+                        <div class="insight-label-page">Overall Attendance</div>
+                        <div class="insight-val-page">{overall_pct:.1f}%</div>
+                    </div>
+                </div>
+                <div class="insight-item-page">
+                    <div class="insight-icon-page">📅</div>
+                    <div>
+                        <div class="insight-label-page">Academic Progress</div>
+                        <div class="insight-val-page">Week {curr_week}</div>
+                    </div>
+                </div>
+                <div class="insight-item-page">
+                    <div class="insight-icon-page">🛡️</div>
+                    <div>
+                        <div class="insight-label-page">Eligibility Status</div>
+                        <div class="insight-val-page" style="color: {health_color};">{health_status}</div>
+                    </div>
+                </div>
+            </div>
+        ''', unsafe_allow_html=True)
+
+    # NAVIGATION: CANCEL / EXTRA LECTURES
     elif nav_mode == "🚫 Cancel / Extra Lectures":
         st.markdown('''
             <div class="dashboard-header">
@@ -802,7 +865,6 @@ def main_app():
         ''', unsafe_allow_html=True)
         
         tab_cancel, tab_extra = st.tabs(["🚫 Cancel a Scheduled Lecture", "➕ Add an Extra Lecture"])
-        
         all_subjects = sorted(list(set(l["subject"] for day in cfg["custom_timetable"] for l in cfg["custom_timetable"][day])))
 
         with tab_cancel:
@@ -884,7 +946,7 @@ def main_app():
             else:
                 st.info("No extra lectures scheduled.")
 
-    # NAVIGATION 1: DAILY ATTENDANCE & SUBJECT PROGRESS
+    # NAVIGATION: DAILY ATTENDANCE
     elif nav_mode == "🎓 Daily Attendance":
         st.markdown('''
             <div class="dashboard-header">
@@ -893,51 +955,6 @@ def main_app():
             </div>
         ''', unsafe_allow_html=True)
         
-        # COMPUTING OVERALL ACADEMIC HEALTH FOR QUICK INSIGHTS WIDGET
-        all_subjects_calc = sorted(list(set(l["subject"] for day in cfg["custom_timetable"] for l in cfg["custom_timetable"][day])))
-        total_p_conducted = 0
-        total_attended_all = 0
-        for s_item in all_subjects_calc:
-            s_st = calculate_subject_stats(s_item, cfg, st.session_state['absent_records'])
-            total_p_conducted += s_st["past_conducted"]
-            total_attended_all += s_st["attended"]
-        
-        overall_pct = (total_attended_all / total_p_conducted * 100) if total_p_conducted > 0 else 100.0
-        health_status = "Good Standing" if overall_pct >= 80.0 else "Action Required"
-        health_color = "#34d399" if overall_pct >= 80.0 else "#fb7185"
-
-        today_date = datetime.date.today()
-        start_d_cfg = cfg.get("start_date", today_date)
-        days_passed = (today_date - start_d_cfg).days
-        curr_week = max(1, math.ceil(days_passed / 7)) if days_passed >= 0 else 1
-
-        # MOBILE-OPTIMIZED & AUTO-ADJUSTING QUICK INSIGHTS BANNER
-        st.markdown(f'''
-            <div class="insights-banner">
-                <div class="insight-item">
-                    <div class="insight-icon">📈</div>
-                    <div class="insight-content">
-                        <div class="insight-label">Overall Attendance</div>
-                        <div class="insight-val">{overall_pct:.1f}%</div>
-                    </div>
-                </div>
-                <div class="insight-item">
-                    <div class="insight-icon">📅</div>
-                    <div class="insight-content">
-                        <div class="insight-label">Academic Progress</div>
-                        <div class="insight-val">Week {curr_week}</div>
-                    </div>
-                </div>
-                <div class="insight-item">
-                    <div class="insight-icon">🛡️</div>
-                    <div class="insight-content">
-                        <div class="insight-label">Eligibility Status</div>
-                        <div class="insight-val" style="color: {health_color};">{health_status}</div>
-                    </div>
-                </div>
-            </div>
-        ''', unsafe_allow_html=True)
-
         col_main, col_stats = st.columns([2.2, 1.4])
 
         with col_main:
@@ -1015,9 +1032,17 @@ def main_app():
                     badge_html = f'<span class="badge-green">Eligible ({stats["percentage"]:.1f}%)</span>' if is_eligible else f'<span class="badge-red">At Risk ({stats["percentage"]:.1f}%)</span>'
                     
                     if stats["safe_left"] >= 0:
-                        status_msg = f"🟢 Safe to miss **{stats['safe_left']}** more lecture(s)."
+                        status_badge_html = f'''
+                            <div class="status-badge-safe">
+                                <span style="font-size: 14px;">🟢</span> Safe to miss <strong>{stats["safe_left"]}</strong> more lecture(s).
+                            </div>
+                        '''
                     else:
-                        status_msg = f"🚨 Must attend **{abs(stats['safe_left'])}** future class(es) to recover!"
+                        status_badge_html = f'''
+                            <div class="status-badge-warning">
+                                <span style="font-size: 14px;">🚨</span> Must attend <strong>{abs(stats["safe_left"])}</strong> future class(es) to recover!
+                            </div>
+                        '''
 
                     st.markdown(f'''
                         <div class="{card_class}">
@@ -1043,9 +1068,7 @@ def main_app():
                                     <div class="metric-val">{stats["total"]}</div>
                                 </div>
                             </div>
-                            <div style="font-size: 13px; color: #cbd5e1; margin-top: 8px;">
-                                {status_msg}
-                            </div>
+                            {status_badge_html}
                         </div>
                     ''', unsafe_allow_html=True)
                     
@@ -1062,8 +1085,15 @@ def main_app():
                     for s in tutorial_subjects:
                         render_redesigned_subject_card(s, is_tute=True)
 
+    # FOOTER SECTION
+    st.markdown('''
+        <div class="app-footer">
+            © 2026 Academic Portal & Attendance Tracker. All rights reserved.
+        </div>
+    ''', unsafe_allow_html=True)
+
 # ---------------------------------------------------------
-# 5. AUTHENTICATION ENTRY POINT WITH ANIMATIONS (UNCHANGED)
+# 5. AUTHENTICATION ENTRY POINT WITH ANIMATIONS
 # ---------------------------------------------------------
 if not st.session_state['logged_in']:
     st.markdown("<br>", unsafe_allow_html=True)
