@@ -1,314 +1,942 @@
-import datetime
-import sqlite3
-import pandas as pd
 import streamlit as st
+import pandas as pd
+import datetime
+import time
+import math
+import sqlite3
+import json
 
-# Page Configuration
-st.set_page_config(
-    page_title="Attendance Tracker",
-    page_icon="🎓",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
-
-# Initialize Session State for Authentication
-if "authenticated" not in st.session_state:
-    st.session_state.authenticated = False
-if "user_email" not in st.session_state:
-    st.session_state.user_email = ""
-
-# Professional Styling (Custom CSS)
-st.markdown(
-    """
-    <style>
-    /* Dark Theme Setup */
-    .stApp {
-        background: linear-gradient(135deg, #0f172a 0%, #020617 100%);
-        color: #f8fafc;
-    }
-    
-    /* Sleek Professional Auth Container */
-    .auth-header {
-        text-align: center;
-        margin-bottom: 25px;
-    }
-    .auth-badge {
-        display: inline-block;
-        background: rgba(99, 102, 241, 0.1);
-        border: 1px solid rgba(99, 102, 241, 0.3);
-        padding: 8px 16px;
-        border-radius: 20px;
-        color: #818cf8;
-        font-size: 0.85rem;
-        font-weight: 600;
-        margin-bottom: 12px;
-    }
-    .auth-title {
-        font-size: 2.2rem;
-        font-weight: 800;
-        color: #ffffff;
-        letter-spacing: -0.5px;
-        margin-bottom: 4px;
-    }
-    .auth-subtitle {
-        color: #94a3b8;
-        font-size: 0.95rem;
-    }
-    
-    /* Form Input Fields styling */
-    .stTextInput input {
-        background-color: #1e293b !important;
-        color: #f8fafc !important;
-        border: 1px solid #334155 !important;
-        border-radius: 12px !important;
-        padding: 12px 16px !important;
-    }
-    .stTextInput input:focus {
-        border-color: #6366f1 !important;
-        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2) !important;
-    }
-
-    /* Buttons */
-    .stButton button {
-        width: 100%;
-        background: linear-gradient(90deg, #4f46e5 0%, #6366f1 100%);
-        color: white;
-        border-radius: 12px;
-        padding: 10px 20px;
-        font-weight: 600;
-        border: none;
-        transition: all 0.2s ease-in-out;
-    }
-    .stButton button:hover {
-        background: linear-gradient(90deg, #4338ca 0%, #4f46e5 100%);
-        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
-    }
-    
-    /* Tab Headers customization */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
-        background-color: #1e293b;
-        padding: 6px;
-        border-radius: 14px;
-        border: 1px solid #334155;
-    }
-    .stTabs [data-baseweb="tab"] {
-        height: 40px;
-        border-radius: 10px;
-        color: #94a3b8;
-        font-weight: 600;
-    }
-    .stTabs [aria-selected="true"] {
-        background-color: #6366f1 !important;
-        color: #ffffff !important;
-    }
-    
-    /* Main Dashboard Cards */
-    .dash-card {
-        background: rgba(30, 41, 59, 0.7);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 16px;
-        padding: 20px;
-        margin-bottom: 15px;
-    }
-    </style>
-""",
-    unsafe_allow_html=True,
-)
-
-# ==========================================
-# 1. LOGIN & REGISTRATION INTERFACE
-# ==========================================
-if not st.session_state.authenticated:
-    # Time-based Greeting
-    hour = datetime.datetime.now().hour
-    greeting = (
-        "Good Morning ☀️"
-        if hour < 12
-        else ("Good Afternoon 🌤️" if hour < 18 else "Good Evening 🌙")
-    )
-
-    # Compact Outer Container
-    _, col_main, _ = st.columns([1, 2.2, 1])
-
-    with col_main:
-        st.markdown(
-            f"""
-            <div class="auth-header">
-                <div class="auth-badge">{greeting}</div>
-                <div class="auth-title">🎓 Attendance Tracker</div>
-                <div class="auth-subtitle">Sign in to access your lecture timetable & tracking portal</div>
-            </div>
-        """,
-            unsafe_allow_html=True,
+# ---------------------------------------------------------
+# 0. DATABASE INITIALIZATION & HELPER FUNCTIONS
+# ---------------------------------------------------------
+def init_db():
+    conn = sqlite3.connect('attendance_app.db')
+    c = conn.cursor()
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            username TEXT PRIMARY KEY,
+            name TEXT,
+            phone TEXT,
+            password TEXT
         )
-
-        tab_login, tab_register = st.tabs(["🔑 Sign In", "📝 Create Account"])
-
-        # LOGIN FORM
-        with tab_login:
-            st.write("")
-            with st.form("login_form", clear_on_submit=False):
-                email = st.text_input(
-                    "Email Address", placeholder="student@university.ac.lk"
-                )
-                password = st.text_input(
-                    "Password", type="password", placeholder="••••••••"
-                )
-
-                submitted = st.form_submit_button("Sign In to Dashboard")
-                if submitted:
-                    if email and password:
-                        st.session_state.authenticated = True
-                        st.session_state.user_email = email
-                        st.rerun()
-                    else:
-                        st.error("කරුණාකර Email එක සහ Password එක ඇතුළත් කරන්න.")
-
-        # REGISTER FORM
-        with tab_register:
-            st.write("")
-            with st.form("register_form", clear_on_submit=False):
-                name = st.text_input("Full Name", placeholder="John Doe")
-                reg_email = st.text_input(
-                    "Email Address", placeholder="student@university.ac.lk"
-                )
-                reg_pass = st.text_input(
-                    "Create Password", type="password", placeholder="••••••••"
-                )
-                confirm_pass = st.text_input(
-                    "Confirm Password", type="password", placeholder="••••••••"
-                )
-
-                reg_submitted = st.form_submit_button("Complete Registration")
-                if reg_submitted:
-                    if not name or not reg_email or not reg_pass:
-                        st.error("සියලුම විස්තර නිවැරදිව පුරවන්න.")
-                    elif reg_pass != confirm_pass:
-                        st.error("Password දෙක ගැලපෙන්නේ නැත!")
-                    else:
-                        st.success(
-                            "Account එක සාර්ථකව සෑදුවා! දැන් Sign In වෙන්න."
-                        )
-
-# ==========================================
-# 2. MAIN DASHBOARD INTERFACE (After Login)
-# ==========================================
-else:
-    # Sidebar Navigation & User Info
-    st.sidebar.title("📌 Navigation")
-    st.sidebar.write(f"Logged in as: **{st.session_state.user_email}**")
-
-    if st.sidebar.button("Logout 🚪"):
-        st.session_state.authenticated = False
-        st.session_state.user_email = ""
-        st.rerun()
-
-    st.sidebar.markdown("---")
-    menu = st.sidebar.radio(
-        "Select Feature Menu",
-        [
-            "📊 Attendance Threshold Calculator (80%)",
-            "📅 Sri Lankan Mercantile & Poya Holidays",
-            "📚 Tutorial & Main Subject Tracking",
-            "🔒 Encrypted User Storage (SQLite)",
-        ],
-    )
-
-    # Header section inside Dashboard
-    st.title("🎓 Lecture Attendance Dashboard")
-    st.caption("Manage your academic progress and timetable effortlessly.")
-    st.markdown("---")
-
-    # FEATURE 1: 80% Attendance Threshold Calculator
-    if menu == "📊 Attendance Threshold Calculator (80%)":
-        st.subheader("📊 Smart 80% Attendance Threshold Calculator")
-
-        col1, col2 = st.columns(2)
-        with col1:
-            total_lectures = st.number_input(
-                "Total Lectures Planned for Semester",
-                min_value=1,
-                value=45,
-            )
-            attended_lectures = st.number_input(
-                "Lectures Attended So Far", min_value=0, value=30
-            )
-
-        percentage = (attended_lectures / total_lectures) * 100
-        required_80 = int(0.8 * total_lectures)
-
-        st.markdown(
-            f"""
-            <div class="dash-card">
-                <h3>Current Attendance: <span style="color:#818cf8;">{percentage:.2f}%</span></h3>
-                <p>Required Minimum Lectures to meet 80%: <b>{required_80}</b></p>
-            </div>
-        """,
-            unsafe_allow_html=True,
+    ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS user_configs (
+            username TEXT PRIMARY KEY,
+            config_json TEXT
         )
+    ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS absent_records (
+            username TEXT PRIMARY KEY,
+            record_key TEXT
+        )
+    ''')
+    conn.commit()
+    conn.close()
 
-        if percentage >= 80:
-            st.success(
-                "🎉 නියමයි! ඔයා දැනටමත් 80% සීමාව පසුකර ඇත. විභාගයට පෙනී සිටීමට සුදුසුකම් ලබයි."
-            )
-        else:
-            needed = required_80 - attended_lectures
-            st.warning(
-                f"⚠️ අවධානයට: 80% සීමාව ලබාගැනීමට තව ලෙක්චර්ස් **{needed}** කට සහභාගී විය යුතුය."
-            )
+init_db()
 
-    # FEATURE 2: Sri Lankan Mercantile & Poya Holiday Calendar
-    elif menu == "📅 Sri Lankan Mercantile & Poya Holidays":
-        st.subheader("📅 Automatic Sri Lankan Mercantile & Poya Holiday Calendar")
+def register_user_db(username, name, phone, password):
+    conn = sqlite3.connect('attendance_app.db')
+    c = conn.cursor()
+    clean_u = username.strip().lower()
+    try:
+        c.execute("INSERT INTO users VALUES (?, ?, ?, ?)", (clean_u, name.strip(), phone.strip(), password))
+        conn.commit()
+        conn.close()
+        return True
+    except sqlite3.IntegrityError:
+        conn.close()
+        return False
 
-        holidays_data = {
-            "Date": [
-                "2026-01-03",
-                "2026-01-15",
-                "2026-02-01",
-                "2026-02-04",
-                "2026-03-03",
-            ],
-            "Holiday Name": [
-                "Duruthu Full Moon Poya Day",
-                "Tamil Thai Pongal Day",
-                "Navam Full Moon Poya Day",
-                "National Independence Day",
-                "Medin Full Moon Poya Day",
-            ],
-            "Type": [
-                "Poya Holiday",
-                "Public/Mercantile",
-                "Poya Holiday",
-                "National",
-                "Poya Holiday",
-            ],
-        }
-        df_holidays = pd.DataFrame(holidays_data)
-        st.dataframe(df_holidays, use_container_width=True)
+def check_login_db(username, password):
+    conn = sqlite3.connect('attendance_app.db')
+    c = conn.cursor()
+    clean_u = username.strip().lower()
+    c.execute("SELECT name FROM users WHERE username=? AND password=?", (clean_u, password))
+    user = c.fetchone()
+    conn.close()
+    return user[0] if user else None
 
-    # FEATURE 3: Tutorial & Main Subject Tracking
-    elif menu == "📚 Tutorial & Main Subject Tracking":
-        st.subheader("📚 Independent Tutorial & Main Subject Tracking")
-
-        st.markdown("#### Subject Breakdown")
-        subjects = ["DSC 2370 - Operations Management", "Management Accounting", "Business Statistics"]
+def load_user_config_db(username):
+    conn = sqlite3.connect('attendance_app.db')
+    c = conn.cursor()
+    clean_u = username.strip().lower()
+    c.execute("SELECT config_json FROM user_configs WHERE username=?", (clean_u,))
+    row = c.fetchone()
+    conn.close()
+    if row:
+        data = json.loads(row[0])
+        data["start_date"] = datetime.datetime.strptime(data["start_date"], "%Y-%m-%d").date()
+        data["end_date"] = datetime.datetime.strptime(data["end_date"], "%Y-%m-%d").date()
         
-        selected_sub = st.selectbox("Select Subject", subjects)
+        for day in data["custom_timetable"]:
+            for session in data["custom_timetable"][day]:
+                session["start_time"] = datetime.datetime.strptime(session["start_time"], "%H:%M:%S").time()
+                session["end_time"] = datetime.datetime.strptime(session["end_time"], "%H:%M:%S").time()
+                
+        for ext in data.get("extra_lectures", []):
+            ext["start_time"] = datetime.datetime.strptime(ext["start_time"], "%H:%M:%S").time()
+            ext["end_time"] = datetime.datetime.strptime(ext["end_time"], "%H:%M:%S").time()
+            
+        return data
+    return None
+
+def save_user_config_db(username, config):
+    conn = sqlite3.connect('attendance_app.db')
+    c = conn.cursor()
+    clean_u = username.strip().lower()
+    cfg_copy = json.loads(json.dumps(config, default=str))
+    c.execute("INSERT OR REPLACE INTO user_configs VALUES (?, ?)", (clean_u, json.dumps(cfg_copy)))
+    conn.commit()
+    conn.close()
+
+def load_absents_db(username):
+    conn = sqlite3.connect('attendance_app.db')
+    c = conn.cursor()
+    clean_u = username.strip().lower()
+    c.execute("SELECT record_key FROM absent_records WHERE username=?", (clean_u,))
+    rows = c.fetchall()
+    conn.close()
+    return set(r[0] for r in rows)
+
+def save_absents_db(username, absent_set):
+    conn = sqlite3.connect('attendance_app.db')
+    c = conn.cursor()
+    clean_u = username.strip().lower()
+    c.execute("DELETE FROM absent_records WHERE username=?", (clean_u,))
+    for key in absent_set:
+        c.execute("INSERT INTO absent_records VALUES (?, ?)", (clean_u, key))
+    conn.commit()
+    conn.close()
+
+
+# ---------------------------------------------------------
+# MOBILE TOUCH-FRIENDLY TIME PICKER HELPER
+# ---------------------------------------------------------
+def mobile_time_picker(label, key_prefix, default_time=datetime.time(9, 0)):
+    st.write(f"**{label}**")
+    c1, c2, c3 = st.columns(3)
+    
+    default_h12 = default_time.hour % 12
+    default_h12 = 12 if default_h12 == 0 else default_h12
+    hours = [f"{i:02d}" for i in range(1, 13)]
+    minutes = [f"{i:02d}" for i in range(60)]
+    ampm_list = ["AM", "PM"]
+    default_ampm = "PM" if default_time.hour >= 12 else "AM"
+    
+    with c1:
+        selected_h = st.selectbox("Hour", hours, index=hours.index(f"{default_h12:02d}"), key=f"{key_prefix}_h")
+    with c2:
+        selected_m = st.selectbox("Min", minutes, index=minutes.index(f"{default_time.minute:02d}"), key=f"{key_prefix}_m")
+    with c3:
+        selected_ampm = st.selectbox("Format", ampm_list, index=ampm_list.index(default_ampm), key=f"{key_prefix}_ap")
+    
+    h24 = int(selected_h)
+    if selected_ampm == "PM" and h24 != 12:
+        h24 += 12
+    elif selected_ampm == "AM" and h24 == 12:
+        h24 = 0
+        
+    return datetime.time(h24, int(selected_m))
+
+
+# ---------------------------------------------------------
+# 1. PAGE CONFIGURATION & CUSTOM CARDS STYLING
+# ---------------------------------------------------------
+st.set_page_config(page_title="Lecture Attendance Tracker", page_icon="🎓", layout="wide")
+
+st.markdown("""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+html, body, [class*="css"] {
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+}
+
+.stApp {
+    background: #090d16;
+    background-image: 
+        radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.12) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(147, 51, 234, 0.1) 0px, transparent 50%);
+}
+
+.dashboard-header {
+    background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    padding: 24px 30px;
+    margin-bottom: 25px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+}
+
+.dashboard-title {
+    font-size: 32px !important;
+    font-weight: 800 !important;
+    background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin: 0 !important;
+    letter-spacing: -0.5px;
+}
+
+/* CUSTOM MODERN SUBJECT CARD STYLES */
+.subject-card-main {
+    background: linear-gradient(145deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.8) 100%);
+    border: 1px solid rgba(59, 130, 246, 0.25);
+    border-radius: 20px;
+    padding: 22px;
+    margin-bottom: 20px;
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.3);
+    position: relative;
+    backdrop-filter: blur(12px);
+}
+
+.subject-card-tute {
+    background: linear-gradient(145deg, rgba(46, 16, 101, 0.5) 0%, rgba(15, 23, 42, 0.85) 100%);
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    border-radius: 20px;
+    padding: 22px;
+    margin-bottom: 20px;
+    box-shadow: 0 10px 30px -5px rgba(88, 28, 135, 0.2);
+    position: relative;
+    backdrop-filter: blur(12px);
+}
+
+.card-header-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.subject-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #f8fafc;
+    margin: 0;
+}
+
+.badge-green {
+    background: rgba(34, 197, 94, 0.15);
+    color: #4ade80;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.badge-red {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-top: 15px;
+    margin-bottom: 15px;
+}
+
+.metric-item {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 10px 14px;
+    border-radius: 12px;
+}
+
+.metric-label {
+    font-size: 11px;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+}
+
+.metric-val {
+    font-size: 15px;
+    font-weight: 700;
+    color: #e2e8f0;
+}
+
+.auth-card {
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 24px;
+    padding: 40px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+.holiday-card {
+    background: linear-gradient(135deg, #b45309 0%, #78350f 100%);
+    color: white;
+    padding: 18px;
+    border-radius: 16px;
+    border-left: 6px solid #fbbf24;
+    margin-bottom: 20px;
+}
+
+.exam-card {
+    background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%);
+    color: white;
+    padding: 18px;
+    border-radius: 16px;
+    border-left: 6px solid #f87171;
+    margin-bottom: 20px;
+}
+
+.stat-box {
+    background: rgba(30, 41, 59, 0.4);
+    border-radius: 16px;
+    padding: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    margin-bottom: 14px;
+}
+
+div[data-testid="stSidebar"] {
+    background: #0b1120 !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.user-profile-box {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    padding: 20px;
+    border-radius: 18px;
+    color: white;
+    text-align: center;
+    margin-bottom: 25px;
+    box-shadow: 0 10px 25px rgba(37, 99, 235, 0.35);
+}
+
+.nav-header {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #64748b;
+    margin-bottom: 12px;
+    font-weight: 700;
+}
+
+.footer-text {
+    text-align: center;
+    color: #64748b;
+    font-size: 13px;
+    padding: 30px 0 10px 0;
+    margin-top: 40px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+</style>
+""", unsafe_allow_html=True)
+
+
+# ---------------------------------------------------------
+# 2. CONSTANTS & SESSION STATE INITIALIZATION
+# ---------------------------------------------------------
+HOLIDAYS_DB = {
+    "2026-01-03": "Duruthu Full Moon Poya Day", "2026-01-15": "Tamil Thai Pongal Day",
+    "2026-02-01": "Navam Full Moon Poya Day", "2026-02-04": "Independence Day",
+    "2026-02-15": "Mahasivarathri Day", "2026-03-02": "Medin Full Moon Poya Day",
+    "2026-03-21": "Id-Ul-Fitre Day", "2026-04-01": "Bak Full Moon Poya Day",
+    "2026-04-03": "Good Friday", "2026-04-13": "Day prior to Sinhala & Tamil New Year",
+    "2026-04-14": "Sinhala & Tamil New Year Day", "2026-05-01": "Vesak Poya Day / May Day",
+    "2026-05-02": "Day following Vesak Poya Day", "2026-05-28": "Id-Ul-Allah Day",
+    "2026-05-30": "Adhi Poson Poya Day", "2026-06-29": "Poson Full Moon Poya Day",
+    "2026-07-29": "Esala Full Moon Poya Day", "2026-08-26": "Milad-Un-Nabi",
+    "2026-08-27": "Nikini Full Moon Poya Day", "2026-09-26": "Binara Full Moon Poya Day",
+    "2026-10-25": "Vap Full Moon Poya Day", "2026-11-08": "Deepawali Festival Day",
+    "2026-11-24": "Ill Full Moon Poya Day", "2026-12-23": "Unduwap Full Moon Poya Day",
+    "2026-12-25": "Christmas Day"
+}
+
+DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+
+if 'logged_in' not in st.session_state:
+    st.session_state['logged_in'] = False
+if 'current_user' not in st.session_state:
+    st.session_state['current_user'] = ""
+if 'current_username' not in st.session_state:
+    st.session_state['current_username'] = ""
+if 'auth_mode' not in st.session_state:
+    st.session_state['auth_mode'] = "Login"
+if 'nav_mode' not in st.session_state:
+    st.session_state['nav_mode'] = "🎓 Daily Attendance"
+
+
+# ---------------------------------------------------------
+# 3. ACCURATE STATS CALCULATION (STRICT 80% THRESHOLD)
+# ---------------------------------------------------------
+def calculate_subject_stats(subj, cfg, absent_records):
+    start_d = cfg["start_date"]
+    end_d = cfg["end_date"]
+    today = datetime.date.today()
+    
+    total_lectures = 0
+    past_conducted_lectures = 0
+    curr_d = start_d
+    
+    while curr_d <= end_d:
+        d_str = curr_d.strftime("%Y-%m-%d")
+        d_name = curr_d.strftime("%A")
+        
+        is_holiday = d_str in HOLIDAYS_DB
+        is_mid = d_str in cfg.get("mid_exam_dates", [])
+        
+        if not is_holiday and not is_mid:
+            day_slots = cfg["custom_timetable"].get(d_name, [])
+            for slot in day_slots:
+                if slot["subject"] == subj:
+                    is_cancelled = any(c["subject"] == subj and c["date"] == d_str for c in cfg.get("cancelled_lectures", []))
+                    if not is_cancelled:
+                        total_lectures += 1
+                        if curr_d <= today:
+                            past_conducted_lectures += 1
+                        
+            for ext in cfg.get("extra_lectures", []):
+                if ext["subject"] == subj and ext["date"] == d_str:
+                    total_lectures += 1
+                    if curr_d <= today:
+                        past_conducted_lectures += 1
+                    
+        curr_d += datetime.timedelta(days=1)
+
+    absences = sum(1 for rec in absent_records if f"_{subj}_" in rec)
+    attended = max(0, past_conducted_lectures - absences)
+    
+    curr_percentage = (attended / past_conducted_lectures * 100) if past_conducted_lectures > 0 else 100.0
+    
+    min_required_attendance = math.ceil(total_lectures * 0.80)
+    max_allowed_absences = max(0, total_lectures - min_required_attendance)
+    
+    safe_absences_left = max_allowed_absences - absences
+    remaining_sessions = max(0, total_lectures - past_conducted_lectures)
+
+    return {
+        "total": total_lectures,
+        "past_conducted": past_conducted_lectures,
+        "absences": absences,
+        "attended": attended,
+        "percentage": curr_percentage,
+        "max_allowed": max_allowed_absences,
+        "safe_left": safe_absences_left,
+        "remaining": remaining_sessions
+    }
+
+
+def get_absence_details(rec_key, cfg):
+    parts = rec_key.split('_')
+    if len(parts) >= 3:
+        date_str = parts[0]
+        subj = parts[1]
+        idx = int(parts[2])
+        
+        date_obj = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
+        day_name = date_obj.strftime("%A")
+        
+        active_slots = []
+        regular_slots = cfg["custom_timetable"].get(day_name, [])
+        cancelled_today = [c["subject"] for c in cfg.get("cancelled_lectures", []) if c["date"] == date_str]
+        
+        for slot in regular_slots:
+            if slot["subject"] not in cancelled_today:
+                active_slots.append(slot)
+                
+        for ext in cfg.get("extra_lectures", []):
+            if ext["date"] == date_str:
+                active_slots.append(ext)
+                
+        subj_slots = [s for s in active_slots if s["subject"] == subj]
+        
+        if idx < len(subj_slots):
+            st_t = subj_slots[idx]["start_time"]
+            end_t = subj_slots[idx]["end_time"]
+            time_str = f"{st_t.strftime('%I:%M %p')} - {end_t.strftime('%I:%M %p')}"
+            return date_str, time_str
+        elif subj_slots:
+            st_t = subj_slots[0]["start_time"]
+            end_t = subj_slots[0]["end_time"]
+            return date_str, f"{st_t.strftime('%I:%M %p')} - {end_t.strftime('%I:%M %p')}"
+            
+        return date_str, "Scheduled Time"
+    return "Unknown Date", "Unknown Time"
+
+
+# ---------------------------------------------------------
+# DIALOG MODAL FOR SUBJECT DETAILS
+# ---------------------------------------------------------
+@st.dialog("📅 Absent Records & Lecture History")
+def open_subject_modal(subj, cfg, username):
+    st.markdown(f"### 📚 Subject: **{subj}**")
+    st.write("---")
+    
+    subj_absents = [r for r in st.session_state['absent_records'] if f"_{subj}_" in r]
+    
+    if not subj_absents:
+        st.success("🎉 Perfect Attendance! No absent lectures recorded for this subject.")
+    else:
+        st.markdown("#### ❌ Currently Cut / Absent Lectures:")
+        for abs_key in subj_absents:
+            abs_d, abs_t = get_absence_details(abs_key, cfg)
+            
+            st.markdown('<div class="stat-box">', unsafe_allow_html=True)
+            c_abs_info, c_abs_btn = st.columns([3, 2])
+            with c_abs_info:
+                st.markdown(f"🗓️ **Date:** `{abs_d}`  \n⏰ **Time:** `{abs_t}`")
+            with c_abs_btn:
+                st.write(" ")
+                if st.button("Mark Present", key=f"modal_rm_{abs_key}", type="primary"):
+                    st.session_state['absent_records'].discard(abs_key)
+                    save_absents_db(username, st.session_state['absent_records'])
+                    st.toast("Updated to Present!", icon="✅")
+                    time.sleep(0.4)
+                    st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
+
+
+# ---------------------------------------------------------
+# 4. MAIN DASHBOARD & APPLICATION LOGIC
+# ---------------------------------------------------------
+def main_app():
+    username = st.session_state['current_username']
+    user_display = st.session_state['current_user']
+
+    if 'cfg' not in st.session_state:
+        loaded_cfg = load_user_config_db(username)
+        if loaded_cfg:
+            st.session_state['cfg'] = loaded_cfg
+        else:
+            st.session_state['cfg'] = {
+                "setup_complete": False,
+                "start_date": datetime.date.today(),
+                "end_date": datetime.date.today() + datetime.timedelta(days=120),
+                "mid_exam_dates": [],
+                "custom_timetable": {day: [] for day in DAYS_OF_WEEK},
+                "cancelled_lectures": [],
+                "extra_lectures": []
+            }
+
+    if 'absent_records' not in st.session_state:
+        st.session_state['absent_records'] = load_absents_db(username)
+
+    cfg = st.session_state['cfg']
+
+    with st.sidebar:
+        st.markdown(f'''
+            <div class="user-profile-box">
+                <h2 style="margin:0; font-size:18px; font-weight:700;">🎓 {user_display}</h2>
+                <p style="margin:4px 0 0 0; font-size:12px; opacity:0.85;">Student Portal</p>
+            </div>
+        ''', unsafe_allow_html=True)
+        
+        st.markdown('<div class="nav-header">Navigation Menu</div>', unsafe_allow_html=True)
+        
+        menu_items = [
+            ("🎓 Daily Attendance", "🎓 Daily Attendance"),
+            ("🚫 Cancel / Extra Lectures", "🚫 Cancel / Extra Lectures"),
+            ("⚙️ Timetable Setup", "⚙️ Timetable Setup")
+        ]
+        
+        for label, mode in menu_items:
+            is_active = st.session_state['nav_mode'] == mode
+            btn_type = "primary" if is_active else "secondary"
+            if st.button(label, use_container_width=True, type=btn_type, key=f"nav_{mode}"):
+                st.session_state['nav_mode'] = mode
+                st.rerun()
+
+        st.write("---")
+        if st.button("🚪 Logout", use_container_width=True):
+            st.session_state['logged_in'] = False
+            st.session_state['current_user'] = ""
+            st.session_state['current_username'] = ""
+            if 'cfg' in st.session_state: del st.session_state['cfg']
+            if 'absent_records' in st.session_state: del st.session_state['absent_records']
+            st.rerun()
+
+    nav_mode = st.session_state['nav_mode']
+
+    # STEP 1: INITIAL SETUP IF NOT COMPLETED
+    if not cfg["setup_complete"] or nav_mode == "⚙️ Timetable Setup":
+        st.markdown('''
+            <div class="dashboard-header">
+                <h1 class="dashboard-title">⚙️ Semester & Timetable Setup</h1>
+                <p style="color: #94a3b8; margin: 4px 0 0 0; font-size: 14px;">Configure your academic semester timeline and weekly lecture schedules.</p>
+            </div>
+        ''', unsafe_allow_html=True)
         
         c1, c2 = st.columns(2)
-        with c1:
-            st.metric("Main Lectures Attended", "12 / 15", delta="80%")
-        with c2:
-            st.metric("Tutorial Sessions Attended", "5 / 6", delta="83.3%")
+        start_d = c1.date_input("Semester Start Date", value=cfg["start_date"])
+        end_d = c2.date_input("Semester End Date", value=cfg["end_date"])
 
-    # FEATURE 4: Secure Local SQLite Storage
-    elif menu == "🔒 Encrypted User Storage (SQLite)":
-        st.subheader("🔒 Secure Local SQLite Encrypted User Storage")
+        mid_dates = st.date_input("Select Mid-Exam Date Range", value=(start_d + datetime.timedelta(days=30), start_d + datetime.timedelta(days=36)))
+
+        st.write("---")
+        st.subheader("🗓️ Weekly Timetable")
+        st.caption("💡 *Note: Add '(Tutorial)' or '(Tute)' in Subject Name to mark it as a Tutorial subject.*")
+
+        for day in DAYS_OF_WEEK:
+            with st.expander(f"📌 **{day} Sessions**", expanded=True):
+                day_list = cfg["custom_timetable"].get(day, [])
+                updated_day_list = []
+                for idx, slot in enumerate(day_list):
+                    col_subj, col_s_time, col_e_time, col_del = st.columns([3, 3, 3, 1])
+                    with col_subj:
+                        s_name = st.text_input(f"Subject Name", value=slot["subject"], key=f"s_{day}_{idx}")
+                    with col_s_time:
+                        s_time = mobile_time_picker("Start Time", key_prefix=f"st_{day}_{idx}", default_time=slot["start_time"])
+                    with col_e_time:
+                        e_time = mobile_time_picker("End Time", key_prefix=f"et_{day}_{idx}", default_time=slot["end_time"])
+                    with col_del:
+                        st.write(" ")
+                        st.write(" ")
+                        if st.button("❌", key=f"del_{day}_{idx}"):
+                            day_list.pop(idx)
+                            st.rerun()
+                    if s_name.strip():
+                        updated_day_list.append({"subject": s_name.strip(), "start_time": s_time, "end_time": e_time})
+
+                cfg["custom_timetable"][day] = updated_day_list
+                if st.button(f"➕ Add Session to {day}", key=f"add_{day}"):
+                    cfg["custom_timetable"][day].append({"subject": "New Subject", "start_time": datetime.time(9, 0), "end_time": datetime.time(11, 0)})
+                    st.rerun()
+
+        if st.button("🚀 Save Setup & Launch Dashboard", use_container_width=True, type="primary"):
+            cfg["start_date"] = start_d
+            cfg["end_date"] = end_d
+            if isinstance(mid_dates, tuple) and len(mid_dates) == 2:
+                m_start, m_end = mid_dates
+                curr = m_start
+                dates_list = []
+                while curr <= m_end:
+                    dates_list.append(curr.strftime("%Y-%m-%d"))
+                    curr += datetime.timedelta(days=1)
+                cfg["mid_exam_dates"] = dates_list
+            cfg["setup_complete"] = True
+            
+            save_user_config_db(username, cfg)
+            st.success("Setup Saved Permanently!")
+            time.sleep(0.5)
+            st.rerun()
+
+    # NAVIGATION 2: CANCEL / EXTRA LECTURES
+    elif nav_mode == "🚫 Cancel / Extra Lectures":
+        st.markdown('''
+            <div class="dashboard-header">
+                <h1 class="dashboard-title">🛠️ Manage Cancelled & Extra Lectures</h1>
+                <p style="color: #94a3b8; margin: 4px 0 0 0; font-size: 14px;">Adjust scheduled lectures or add special make-up classes.</p>
+            </div>
+        ''', unsafe_allow_html=True)
         
-        st.info("ඔබගේ සියලුම දත්ත ආරක්ෂිතව Local SQLite Database එක තුළ Save කර ඇත.")
+        tab_cancel, tab_extra = st.tabs(["🚫 Cancel a Scheduled Lecture", "➕ Add an Extra Lecture"])
         
-        # Simple DB check status
-        conn = sqlite3.connect(":memory:")
-        st.success("Database Connection: ACTIVE (Encrypted & Connected)")
+        all_subjects = sorted(list(set(l["subject"] for day in cfg["custom_timetable"] for l in cfg["custom_timetable"][day])))
+
+        with tab_cancel:
+            st.subheader("Cancel a Lecture for a Specific Date")
+            if not all_subjects:
+                st.warning("Please setup your timetable first in Timetable Setup!")
+            else:
+                c_date = st.date_input("Select Cancel Date:", min_value=cfg["start_date"], max_value=cfg["end_date"], key="c_date")
+                c_day_name = c_date.strftime("%A")
+                
+                day_lectures = cfg["custom_timetable"].get(c_day_name, [])
+                day_subjects = sorted(list(set(l["subject"] for l in day_lectures)))
+
+                if not day_subjects:
+                    st.info(f"No regular lectures scheduled on {c_day_name}s.")
+                else:
+                    c_subj = st.selectbox("Select Subject to Cancel:", options=day_subjects, key="c_subj")
+                    
+                    if st.button("🚫 Cancel This Lecture", type="primary"):
+                        c_date_str = c_date.strftime("%Y-%m-%d")
+                        if not any(c["subject"] == c_subj and c["date"] == c_date_str for c in cfg["cancelled_lectures"]):
+                            cfg["cancelled_lectures"].append({"subject": c_subj, "date": c_date_str})
+                            save_user_config_db(username, cfg)
+                            st.success(f"{c_subj} cancelled on {c_date_str} successfully!")
+                            time.sleep(0.5)
+                            st.rerun()
+
+            st.write("---")
+            st.write("### 📋 Currently Cancelled Lectures")
+            if cfg["cancelled_lectures"]:
+                for idx, item in enumerate(cfg["cancelled_lectures"]):
+                    col_info, col_btn = st.columns([4, 1])
+                    col_info.write(f"❌ **{item['subject']}** on `{item['date']}`")
+                    if col_btn.button("Restore", key=f"rest_{idx}"):
+                        cfg["cancelled_lectures"].pop(idx)
+                        save_user_config_db(username, cfg)
+                        st.rerun()
+            else:
+                st.info("No cancelled lectures recorded.")
+
+        with tab_extra:
+            st.subheader("Schedule an Extra Lecture")
+            if not all_subjects:
+                st.warning("Please setup your timetable first in Timetable Setup!")
+            else:
+                e_date = st.date_input("Select Extra Lecture Date:", min_value=cfg["start_date"], max_value=cfg["end_date"], key="e_date")
+                e_subj = st.selectbox("Select Subject for Extra Class:", options=all_subjects, key="e_subj")
+                
+                col_st, col_et = st.columns(2)
+                with col_st:
+                    e_st = mobile_time_picker("Start Time", key_prefix="e_st", default_time=datetime.time(9, 0))
+                with col_et:
+                    e_et = mobile_time_picker("End Time", key_prefix="e_et", default_time=datetime.time(11, 0))
+
+                if st.button("➕ Schedule Extra Lecture", type="primary"):
+                    e_date_str = e_date.strftime("%Y-%m-%d")
+                    cfg["extra_lectures"].append({
+                        "subject": e_subj,
+                        "date": e_date_str,
+                        "start_time": e_st,
+                        "end_time": e_et
+                    })
+                    save_user_config_db(username, cfg)
+                    st.success(f"Extra lecture for {e_subj} added on {e_date_str}!")
+                    time.sleep(0.5)
+                    st.rerun()
+
+            st.write("---")
+            st.write("### 📋 Scheduled Extra Lectures")
+            if cfg["extra_lectures"]:
+                for idx, item in enumerate(cfg["extra_lectures"]):
+                    col_info, col_btn = st.columns([4, 1])
+                    formatted_time = f"{item['start_time'].strftime('%I:%M %p')} - {item['end_time'].strftime('%I:%M %p')}"
+                    col_info.write(f"➕ **{item['subject']}** on `{item['date']}` (`{formatted_time}`)")
+                    if col_btn.button("Remove", key=f"rm_ext_{idx}"):
+                        cfg["extra_lectures"].pop(idx)
+                        save_user_config_db(username, cfg)
+                        st.rerun()
+            else:
+                st.info("No extra lectures scheduled.")
+
+    # NAVIGATION 1: DAILY ATTENDANCE & SUBJECT PROGRESS
+    elif nav_mode == "🎓 Daily Attendance":
+        st.markdown('''
+            <div class="dashboard-header">
+                <h1 class="dashboard-title">🎓 Lecture Attendance Dashboard</h1>
+                <p style="color: #94a3b8; margin: 4px 0 0 0; font-size: 14px;">Track your daily attendance and ensure minimum 80% criteria per subject.</p>
+            </div>
+        ''', unsafe_allow_html=True)
+        
+        col_main, col_stats = st.columns([2.2, 1.4])
+
+        with col_main:
+            st.subheader("📅 Daily Attendance Tracker")
+            selected_date = st.date_input("Choose Date:", value=datetime.date.today() if cfg["start_date"] <= datetime.date.today() <= cfg["end_date"] else cfg["start_date"], min_value=cfg["start_date"], max_value=cfg["end_date"])
+            selected_str = selected_date.strftime("%Y-%m-%d")
+            day_name = selected_date.strftime("%A")
+
+            is_holiday = selected_str in HOLIDAYS_DB
+            is_mid_exam = selected_str in cfg.get("mid_exam_dates", [])
+
+            if is_holiday:
+                st.markdown(f'<div class="holiday-card"><h3>🇱🇰 Holiday: {HOLIDAYS_DB[selected_str]}</h3></div>', unsafe_allow_html=True)
+            elif is_mid_exam:
+                st.markdown('<div class="exam-card"><h3>🚫 Mid-Exam Period</h3></div>', unsafe_allow_html=True)
+
+            raw_lectures = cfg["custom_timetable"].get(day_name, [])
+            cancelled_today = [c["subject"] for c in cfg.get("cancelled_lectures", []) if c["date"] == selected_str]
+            active_lectures = [l for l in raw_lectures if l["subject"] not in cancelled_today]
+
+            for ext in [e for e in cfg.get("extra_lectures", []) if e["date"] == selected_str]:
+                active_lectures.append({"subject": ext["subject"], "start_time": ext["start_time"], "end_time": ext["end_time"], "is_extra": True})
+
+            if not active_lectures:
+                st.info("No lectures scheduled for this date!")
+            else:
+                subj_counter = {}
+                for lec in active_lectures:
+                    subj = lec["subject"]
+                    subj_counter[subj] = subj_counter.get(subj, 0)
+                    subj_idx = subj_counter[subj]
+                    subj_counter[subj] += 1
+
+                    formatted_time = f"{lec['start_time'].strftime('%I:%M %p')} - {lec['end_time'].strftime('%I:%M %p')}"
+                    extra_tag = " (Extra Class)" if lec.get("is_extra") else ""
+                    
+                    record_key = f"{selected_str}_{subj}_{subj_idx}"
+                    is_absent = record_key in st.session_state['absent_records']
+
+                    st.markdown('<div class="stat-box">', unsafe_allow_html=True)
+                    c_info, c_chk = st.columns([3, 1])
+                    with c_info:
+                        st.markdown(f"**📖 {subj}**{extra_tag}  \n`⏰ {formatted_time}`")
+                    with c_chk:
+                        absent_marked = st.checkbox("Mark Absent", value=is_absent, key=f"chk_{record_key}", disabled=is_holiday or is_mid_exam)
+                        
+                        if absent_marked != is_absent:
+                            if absent_marked:
+                                st.session_state['absent_records'].add(record_key)
+                            else:
+                                st.session_state['absent_records'].discard(record_key)
+                            save_absents_db(username, st.session_state['absent_records'])
+                            st.rerun()
+                    st.markdown('</div>', unsafe_allow_html=True)
+
+        with col_stats:
+            st.subheader("📊 Subject Progress & Stats")
+            all_subjects = sorted(list(set(l["subject"] for day in cfg["custom_timetable"] for l in cfg["custom_timetable"][day])))
+
+            if not all_subjects:
+                st.info("No subjects found. Please setup timetable.")
+            else:
+                main_subjects = [s for s in all_subjects if not ("tutorial" in s.lower() or "tute" in s.lower())]
+                tutorial_subjects = [s for s in all_subjects if ("tutorial" in s.lower() or "tute" in s.lower())]
+
+                # REDESIGNED MODERN CARD RENDERING FUNCTION
+                def render_redesigned_subject_card(subj, is_tute=False):
+                    stats = calculate_subject_stats(subj, cfg, st.session_state['absent_records'])
+                    card_class = "subject-card-tute" if is_tute else "subject-card-main"
+                    badge_class = "badge-green" if stats['percentage'] >= 80 else "badge-red"
+                    icon = "📝" if is_tute else "📚"
+
+                    # Card Header HTML
+                    st.markdown(f'''
+                        <div class="{card_class}">
+                            <div class="card-header-flex">
+                                <h3 class="subject-title">{icon} {subj}</h3>
+                                <span class="{badge_class}">{stats['percentage']:.1f}%</span>
+                            </div>
+                            <div class="metrics-grid">
+                                <div class="metric-item">
+                                    <div class="metric-label">Total Sessions</div>
+                                    <div class="metric-val">{stats['total']}</div>
+                                </div>
+                                <div class="metric-item">
+                                    <div class="metric-label">Attended</div>
+                                    <div class="metric-val">{stats['attended']} / {stats['past_conducted']}</div>
+                                </div>
+                                <div class="metric-item">
+                                    <div class="metric-label">Cuts / Absent</div>
+                                    <div class="metric-val">{stats['absences']}</div>
+                                </div>
+                                <div class="metric-item">
+                                    <div class="metric-label">Max Allowed Cuts</div>
+                                    <div class="metric-val">{stats['max_allowed']}</div>
+                                </div>
+                            </div>
+                        </div>
+                    ''', unsafe_allow_html=True)
+
+                    # Progress Bar & Alerts
+                    st.progress(min(1.0, stats['percentage'] / 100.0))
+
+                    if stats['safe_left'] > 0:
+                        st.success(f"🎯 **Safe to cut:** {stats['safe_left']} more lecture(s) left.")
+                    elif stats['safe_left'] == 0:
+                        st.warning(f"⚠️ **Limit Reached:** Maximum allowed cuts used!")
+                    else:
+                        st.error(f"🚨 **Warning:** Below 80%! Attend upcoming classes!")
+
+                    st.write(" ")
+                    if st.button(f"🔍 View / Edit Absent Dates", key=f"btn_pop_{subj}", use_container_width=True):
+                        open_subject_modal(subj, cfg, username)
+                    st.write(" ")
+
+                if main_subjects:
+                    st.markdown("### 📘 Main Subjects")
+                    for subj in main_subjects:
+                        render_redesigned_subject_card(subj, is_tute=False)
+
+                if tutorial_subjects:
+                    st.write("---")
+                    st.markdown("### 📝 Tutorial Subjects *(Independent)*")
+                    for subj in tutorial_subjects:
+                        render_redesigned_subject_card(subj, is_tute=True)
+
+    # FOOTER ADDITION (ALL RIGHTS RESERVED)
+    st.markdown('''
+        <div class="footer-text">
+            © 2026 Lecture Attendance Tracker System. All Rights Reserved.
+        </div>
+    ''', unsafe_allow_html=True)
+
+
+# ---------------------------------------------------------
+# 5. AUTHENTICATION SYSTEM (LOGIN / REGISTER)
+# ---------------------------------------------------------
+def auth_interface():
+    st.markdown("<h1 style='text-align: center; color: white; margin-bottom: 25px;'>🎓 Lecture Attendance App</h1>", unsafe_allow_html=True)
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("🔑 Login Mode", use_container_width=True, type="primary" if st.session_state['auth_mode'] == "Login" else "secondary"):
+            st.session_state['auth_mode'] = "Login"
+            st.rerun()
+    with col2:
+        if st.button("📝 Register Mode", use_container_width=True, type="primary" if st.session_state['auth_mode'] == "Register" else "secondary"):
+            st.session_state['auth_mode'] = "Register"
+            st.rerun()
+
+    if st.session_state['auth_mode'] == "Login":
+        st.markdown('<div class="auth-card">', unsafe_allow_html=True)
+        st.subheader("Login to Your Account")
+        st.markdown("<p style='color: #94a3b8; font-size: 15px; margin-bottom: 20px;'>👋 Hi Welcome! Please login to your account</p>", unsafe_allow_html=True)
+        
+        login_u = st.text_input("Username", key="l_user")
+        login_p = st.text_input("Password", type="password", key="l_pass")
+
+        if st.button("🚀 Sign In", use_container_width=True, type="primary"):
+            user_display_name = check_login_db(login_u, login_p)
+            if user_display_name:
+                st.session_state['logged_in'] = True
+                st.session_state['current_user'] = user_display_name
+                st.session_state['current_username'] = login_u.strip().lower()
+                st.toast("Login Successful!", icon="🎉")
+                time.sleep(0.5)
+                st.rerun()
+            else:
+                st.error("Invalid Username or Password.")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    else:
+        st.markdown('<div class="auth-card">', unsafe_allow_html=True)
+        st.subheader("Create a New Account")
+        st.markdown("<p style='color: #94a3b8; font-size: 15px; margin-bottom: 20px;'>👋 Hi Welcome! Please create your account below</p>", unsafe_allow_html=True)
+        
+        reg_fname = st.text_input("Full Name", placeholder="e.g. Kasun Perera")
+        reg_phone = st.text_input("Phone Number", placeholder="e.g. 0771234567")
+        reg_u = st.text_input("Username", placeholder="Choose a unique username")
+        reg_p = st.text_input("Password", type="password", key="reg_p")
+        reg_cp = st.text_input("Confirm Password", type="password", key="reg_cp")
+
+        if st.button("✨ Register Account", use_container_width=True, type="primary"):
+            clean_u = reg_u.strip()
+            if not reg_fname.strip() or not clean_u or not reg_p:
+                st.warning("Please fill in all details!")
+            elif reg_p != reg_cp:
+                st.error("Passwords do not match!")
+            else:
+                if register_user_db(clean_u, reg_fname, reg_phone, reg_p):
+                    st.session_state['logged_in'] = True
+                    st.session_state['current_user'] = reg_fname.strip()
+                    st.session_state['current_username'] = clean_u.lower()
+                    st.success("Account Created Successfully! Directing to App...")
+                    time.sleep(1)
+                    st.rerun()
+                else:
+                    st.error("Username already taken! Try another one.")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown('''
+        <div class="footer-text">
+            © 2026 Lecture Attendance Tracker System. All Rights Reserved.
+        </div>
+    ''', unsafe_allow_html=True)
+
+
+# ---------------------------------------------------------
+# 6. APP ROUTING
+# ---------------------------------------------------------
+if st.session_state['logged_in']:
+    main_app()
+else:
+    auth_interface()
