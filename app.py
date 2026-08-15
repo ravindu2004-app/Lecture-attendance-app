@@ -111,7 +111,6 @@ def save_absents_db(username, absent_set):
     conn.commit()
     conn.close()
 
-
 # ---------------------------------------------------------
 # MOBILE TOUCH-FRIENDLY TIME PICKER HELPER
 # ---------------------------------------------------------
@@ -141,11 +140,10 @@ def mobile_time_picker(label, key_prefix, default_time=datetime.time(9, 0)):
         
     return datetime.time(h24, int(selected_m))
 
-
 # ---------------------------------------------------------
-# 1. PAGE CONFIGURATION & CUSTOM CARDS STYLING
+# 1. PAGE CONFIGURATION & ANIMATED STYLING
 # ---------------------------------------------------------
-st.set_page_config(page_title="Lecture Attendance Tracker", page_icon="🎓", layout="wide")
+st.set_page_config(page_title="Academic Portal & Attendance Tracker", page_icon="🎓", layout="wide")
 
 st.markdown("""
 <style>
@@ -156,24 +154,85 @@ html, body, [class*="css"] {
 }
 
 .stApp {
-    background: #0b0f19;
+    background: #080d1a;
     background-image: 
-        radial-gradient(at 20% 10%, rgba(244, 63, 94, 0.08) 0px, transparent 40%),
-        radial-gradient(at 80% 90%, rgba(99, 102, 241, 0.08) 0px, transparent 40%);
+        radial-gradient(at 0% 0%, rgba(244, 63, 94, 0.12) 0px, transparent 45%),
+        radial-gradient(at 100% 100%, rgba(99, 102, 241, 0.12) 0px, transparent 45%),
+        radial-gradient(at 50% 50%, rgba(15, 23, 42, 0.5) 0px, transparent 100%);
 }
 
-.dashboard-header {
-    background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.8) 100%);
+/* KEYFRAME ANIMATIONS */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(24px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes pulseGlow {
+    0% { box-shadow: 0 0 15px rgba(244, 63, 94, 0.2); }
+    50% { box-shadow: 0 0 30px rgba(244, 63, 94, 0.4); }
+    100% { box-shadow: 0 0 15px rgba(244, 63, 94, 0.2); }
+}
+
+/* AUTHENTICATION ANIMATED ULTRA CARD */
+.auth-animated-card {
+    background: linear-gradient(165deg, rgba(20, 27, 45, 0.85) 0%, rgba(10, 15, 29, 0.95) 100%);
+    backdrop-filter: blur(30px);
     border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 28px;
+    padding: 36px 32px;
+    box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+    animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.auth-header-box {
+    background: linear-gradient(135deg, rgba(244, 63, 94, 0.12) 0%, rgba(99, 102, 241, 0.1) 100%);
+    border: 1px solid rgba(244, 63, 94, 0.25);
+    border-radius: 20px;
+    padding: 24px 20px;
+    text-align: center;
+    margin-bottom: 24px;
+    animation: pulseGlow 4s infinite ease-in-out;
+}
+
+.auth-header-title {
+    font-size: 28px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.auth-subtitle {
+    color: #94a3b8;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* MAIN DASHBOARD HEADER */
+.dashboard-header {
+    background: linear-gradient(135deg, rgba(23, 32, 54, 0.7) 0%, rgba(13, 18, 32, 0.85) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 24px;
     padding: 28px 36px;
     margin-bottom: 25px;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-    backdrop-filter: blur(16px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    backdrop-filter: blur(20px);
+    animation: fadeInUp 0.5s ease-out;
 }
 
 .dashboard-title {
-    font-size: 34px !important;
+    font-size: 32px !important;
     font-weight: 800 !important;
     background: linear-gradient(135deg, #f43f5e 0%, #fb7185 100%);
     -webkit-background-clip: text;
@@ -182,103 +241,75 @@ html, body, [class*="css"] {
     letter-spacing: -0.5px;
 }
 
-/* AUTHENTICATION PROFESSIONAL ULTRA-CARD */
-.auth-container {
-    background: linear-gradient(145deg, rgba(23, 31, 48, 0.7) 0%, rgba(13, 18, 30, 0.9) 100%);
-    backdrop-filter: blur(24px);
+/* TRACKER & SUBJECT CARDS WITH ANIMATED HOVER */
+.tracker-card {
+    background: linear-gradient(145deg, rgba(23, 31, 50, 0.6) 0%, rgba(13, 18, 30, 0.8) 100%);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 24px;
-    padding: 38px 32px 32px 32px;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
-}
-
-.auth-header-box {
-    background: linear-gradient(135deg, rgba(244, 63, 94, 0.1) 0%, rgba(99, 102, 241, 0.08) 100%);
-    border: 1px solid rgba(244, 63, 94, 0.2);
-    border-radius: 20px;
-    padding: 26px 20px;
-    text-align: center;
-    margin-bottom: 25px;
-}
-
-.auth-header-title {
-    font-size: 28px;
-    font-weight: 800;
-    text-align: center;
-    background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    margin-bottom: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-}
-
-.auth-subtitle {
-    text-align: center;
-    color: #94a3b8;
-    font-size: 13px;
-    font-weight: 500;
-    margin: 0;
-}
-
-/* ATTENDANCE SECTION CARDS */
-.tracker-card {
-    background: linear-gradient(145deg, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.75) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 20px;
-    padding: 24px;
+    padding: 26px;
     margin-bottom: 24px;
-    backdrop-filter: blur(12px);
+    backdrop-filter: blur(16px);
+    animation: fadeInUp 0.5s ease-out;
 }
 
 .lecture-item-box {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.07);
-    border-radius: 16px;
-    padding: 16px 20px;
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 18px;
+    padding: 18px 22px;
     margin-bottom: 12px;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .lecture-item-box:hover {
+    transform: translateY(-2px);
     border-color: rgba(244, 63, 94, 0.4);
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.04);
+    box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.3);
 }
 
-/* CUSTOM MODERN SUBJECT CARD STYLES */
+.subject-card-main, .subject-card-tute {
+    border-radius: 22px;
+    padding: 24px;
+    margin-bottom: 22px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(14px);
+    animation: fadeInUp 0.6s ease-out;
+}
+
 .subject-card-main {
-    background: linear-gradient(145deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.8) 100%);
+    background: linear-gradient(145deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.85) 100%);
     border: 1px solid rgba(244, 63, 94, 0.25);
-    border-radius: 20px;
-    padding: 22px;
-    margin-bottom: 20px;
-    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.3);
-    position: relative;
-    backdrop-filter: blur(12px);
+    box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.4);
+}
+
+.subject-card-main:hover {
+    transform: translateY(-3px);
+    border-color: rgba(244, 63, 94, 0.5);
+    box-shadow: 0 20px 40px -10px rgba(244, 63, 94, 0.25);
 }
 
 .subject-card-tute {
-    background: linear-gradient(145deg, rgba(46, 16, 101, 0.5) 0%, rgba(15, 23, 42, 0.85) 100%);
+    background: linear-gradient(145deg, rgba(46, 16, 101, 0.55) 0%, rgba(15, 23, 42, 0.9) 100%);
     border: 1px solid rgba(168, 85, 247, 0.3);
-    border-radius: 20px;
-    padding: 22px;
-    margin-bottom: 20px;
-    box-shadow: 0 10px 30px -5px rgba(88, 28, 135, 0.2);
-    position: relative;
-    backdrop-filter: blur(12px);
+    box-shadow: 0 12px 30px -5px rgba(88, 28, 135, 0.25);
+}
+
+.subject-card-tute:hover {
+    transform: translateY(-3px);
+    border-color: rgba(168, 85, 247, 0.6);
+    box-shadow: 0 20px 40px -10px rgba(168, 85, 247, 0.3);
 }
 
 .card-header-flex {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 15px;
+    margin-bottom: 16px;
 }
 
 .subject-title {
-    font-size: 18px;
+    font-size: 19px;
     font-weight: 700;
     color: #f8fafc;
     margin: 0;
@@ -287,8 +318,8 @@ html, body, [class*="css"] {
 .badge-green {
     background: rgba(34, 197, 94, 0.15);
     color: #4ade80;
-    border: 1px solid rgba(34, 197, 94, 0.3);
-    padding: 4px 12px;
+    border: 1px solid rgba(34, 197, 94, 0.35);
+    padding: 5px 14px;
     border-radius: 20px;
     font-size: 13px;
     font-weight: 700;
@@ -297,8 +328,8 @@ html, body, [class*="css"] {
 .badge-red {
     background: rgba(239, 68, 68, 0.15);
     color: #f87171;
-    border: 1px solid rgba(239, 68, 68, 0.3);
-    padding: 4px 12px;
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    padding: 5px 14px;
     border-radius: 20px;
     font-size: 13px;
     font-weight: 700;
@@ -307,48 +338,51 @@ html, body, [class*="css"] {
 .metrics-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-    margin-top: 15px;
-    margin-bottom: 15px;
+    gap: 12px;
+    margin-top: 16px;
+    margin-bottom: 16px;
 }
 
 .metric-item {
     background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    padding: 10px 14px;
-    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 12px 16px;
+    border-radius: 14px;
 }
 
 .metric-label {
     font-size: 11px;
     color: #94a3b8;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 2px;
+    letter-spacing: 0.6px;
+    margin-bottom: 4px;
+    font-weight: 600;
 }
 
 .metric-val {
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 700;
-    color: #e2e8f0;
+    color: #f1f5f9;
 }
 
 .holiday-card {
     background: linear-gradient(135deg, #b45309 0%, #78350f 100%);
     color: white;
-    padding: 18px;
-    border-radius: 16px;
+    padding: 20px;
+    border-radius: 18px;
     border-left: 6px solid #fbbf24;
     margin-bottom: 20px;
+    animation: fadeInUp 0.4s ease-out;
 }
 
 .exam-card {
     background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%);
     color: white;
-    padding: 18px;
-    border-radius: 16px;
+    padding: 20px;
+    border-radius: 18px;
     border-left: 6px solid #f87171;
     margin-bottom: 20px;
+    animation: fadeInUp 0.4s ease-out;
 }
 
 .stat-box {
@@ -360,7 +394,7 @@ html, body, [class*="css"] {
 }
 
 div[data-testid="stSidebar"] {
-    background: #0b1120 !important;
+    background: #080d1a !important;
     border-right: 1px solid rgba(255, 255, 255, 0.06);
 }
 
@@ -384,7 +418,6 @@ div[data-testid="stSidebar"] {
 }
 </style>
 """, unsafe_allow_html=True)
-
 
 # ---------------------------------------------------------
 # 2. CONSTANTS & SESSION STATE INITIALIZATION
@@ -417,7 +450,6 @@ if 'auth_mode' not in st.session_state:
     st.session_state['auth_mode'] = "Login"
 if 'nav_mode' not in st.session_state:
     st.session_state['nav_mode'] = "🎓 Daily Attendance"
-
 
 # ---------------------------------------------------------
 # 3. ACCURATE STATS CALCULATION (STRICT 80% THRESHOLD)
@@ -478,7 +510,6 @@ def calculate_subject_stats(subj, cfg, absent_records):
         "remaining": remaining_sessions
     }
 
-
 def get_absence_details(rec_key, cfg):
     parts = rec_key.split('_')
     if len(parts) >= 3:
@@ -516,7 +547,6 @@ def get_absence_details(rec_key, cfg):
         return date_str, "Scheduled Time"
     return "Unknown Date", "Unknown Time"
 
-
 # ---------------------------------------------------------
 # DIALOG MODAL FOR SUBJECT DETAILS
 # ---------------------------------------------------------
@@ -547,7 +577,6 @@ def open_subject_modal(subj, cfg, username):
                     time.sleep(0.4)
                     st.rerun()
             st.markdown('</div>', unsafe_allow_html=True)
-
 
 # ---------------------------------------------------------
 # 4. MAIN DASHBOARD & APPLICATION LOGIC
@@ -899,17 +928,16 @@ def main_app():
                     for s in tutorial_subjects:
                         render_redesigned_subject_card(s, is_tute=True)
 
-
 # ---------------------------------------------------------
-# 5. AUTHENTICATION (LOGIN / REGISTER) ENTRY POINT (PRO REDESIGN)
+# 5. AUTHENTICATION ENTRY POINT WITH ANIMATIONS
 # ---------------------------------------------------------
 if not st.session_state['logged_in']:
-    st.markdown("<br><br>", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
     c_left, c_center, c_right = st.columns([1, 1.8, 1])
 
     with c_center:
         st.markdown('''
-            <div class="auth-container">
+            <div class="auth-animated-card">
                 <div class="auth-header-box">
                     <div class="auth-header-title">🎓 Academic Portal</div>
                     <div class="auth-subtitle">Lecture Attendance & Academic Management System</div>
@@ -920,6 +948,7 @@ if not st.session_state['logged_in']:
         st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True)
 
         if auth_choice == "Login":
+            st.markdown('<div style="animation: fadeInUp 0.4s ease-out;">', unsafe_allow_html=True)
             u_input = st.text_input("Username", key="login_u", placeholder="Enter your username")
             p_input = st.text_input("Password", type="password", key="login_p", placeholder="Enter your password")
             st.write(" ")
@@ -938,8 +967,10 @@ if not st.session_state['logged_in']:
                         st.error("Invalid Username or Password.")
                 else:
                     st.warning("Please fill in all fields.")
+            st.markdown('</div>', unsafe_allow_html=True)
 
         else:
+            st.markdown('<div style="animation: fadeInUp 0.4s ease-out;">', unsafe_allow_html=True)
             reg_name = st.text_input("Full Name", key="reg_name", placeholder="John Doe")
             reg_phone = st.text_input("Phone Number", key="reg_phone", placeholder="+94 XX XXX XXXX")
             reg_u = st.text_input("Create Username", key="reg_u", placeholder="Choose a unique username")
@@ -955,6 +986,7 @@ if not st.session_state['logged_in']:
                         st.error("Username already exists. Choose another.")
                 else:
                     st.warning("Please complete all registration fields.")
+            st.markdown('</div>', unsafe_allow_html=True)
 
         st.markdown('</div>', unsafe_allow_html=True)
 else:
