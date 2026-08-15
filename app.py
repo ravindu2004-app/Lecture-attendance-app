@@ -1155,3 +1155,189 @@ if not st.session_state['logged_in']:
         st.markdown('</div>', unsafe_allow_html=True)
 else:
     main_app()
+    # ---------------------------------------------------------
+# 5. NAVIGATION: DAILY ATTENDANCE (DEFAULT)
+# ---------------------------------------------------------
+    elif nav_mode == "🎓 Daily Attendance":
+        st.markdown('''
+            <div class="dashboard-header">
+                <h1 class="dashboard-title">🎓 Daily Attendance & Progress Tracker</h1>
+                <p style="color: #94a3b8; margin: 4px 0 0 0; font-size: 14px;">Monitor your lectures, track absences, and check tutorial progress.</p>
+            </div>
+        ''', unsafe_allow_html=True)
+
+        selected_date = st.date_input("Select Date for Attendance", value=datetime.date.today())
+        date_str = selected_date.strftime("%Y-%m-%d")
+        day_name = selected_date.strftime("%A")
+
+        # Holiday & Exam Alerts
+        if date_str in HOLIDAYS_DB:
+            st.markdown(f'''
+                <div class="holiday-card">
+                    <h3>🏖️ Public Holiday</h3>
+                    <p style="margin: 0; font-size: 16px;"><b>{HOLIDAYS_DB[date_str]}</b> - No regular academic lectures scheduled.</p>
+                </div>
+            ''', unsafe_allow_html=True)
+        elif date_str in cfg.get("mid_exam_dates", []):
+            st.markdown(f'''
+                <div class="exam-card">
+                    <h3>📝 Mid Examination Period</h3>
+                    <p style="margin: 0; font-size: 16px;">Special examination schedule active for today.</p>
+                </div>
+            ''', unsafe_allow_html=True)
+
+        # Active Slots for Selected Date
+        regular_slots = cfg["custom_timetable"].get(day_name, [])
+        cancelled_today = [c["subject"] for c in cfg.get("cancelled_lectures", []) if c["date"] == date_str]
+        
+        active_slots = []
+        for slot in regular_slots:
+            if slot["subject"] not in cancelled_today:
+                active_slots.append(slot)
+                
+        for ext in cfg.get("extra_lectures", []):
+            if ext["date"] == date_str:
+                active_slots.append(ext)
+
+        st.subheader(f"📌 Schedule for {day_name} ({date_str})")
+        
+        if not active_slots:
+            st.info("✨ No lectures or sessions scheduled for this date.")
+        else:
+            for idx, slot in enumerate(active_slots):
+                s_name = slot["subject"]
+                st_t = slot["start_time"]
+                end_t = slot["end_time"]
+                time_str = f"{st_t.strftime('%I:%M %p')} - {end_t.strftime('%I:%M %p')}"
+                
+                record_key = f"{date_str}_{s_name}_{idx}"
+                is_absent = record_key in st.session_state['absent_records']
+                
+                st.markdown('<div class="lecture-item-box">', unsafe_allow_html=True)
+                col_info, col_action = st.columns([3, 2])
+                with col_info:
+                    st.markdown(f"📚 **{s_name}**  \n⏰ `{time_str}`")
+                with col_action:
+                    st.write(" ")
+                    if is_absent:
+                        if st.button("❌ Absent", key=f"att_{record_key}", type="secondary", use_container_width=True):
+                            st.session_state['absent_records'].discard(record_key)
+                            save_absents_db(username, st.session_state['absent_records'])
+                            st.rerun()
+                    else:
+                        if st.button("✅ Present", key=f"att_{record_key}", type="primary", use_container_width=True):
+                            st.session_state['absent_records'].add(record_key)
+                            save_absents_db(username, st.session_state['absent_records'])
+                            st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
+
+        st.write("---")
+        st.subheader("📊 Subject Performance & Tutorials")
+
+        all_subjects = sorted(list(set(l["subject"] for day in cfg["custom_timetable"] for l in cfg["custom_timetable"][day])))
+        
+        if not all_subjects:
+            st.warning("No subjects found. Please configure your timetable in 'Timetable Setup'.")
+        else:
+            for subj in all_subjects:
+                stats = calculate_subject_stats(subj, cfg, st.session_state['absent_records'])
+                pct = stats["percentage"]
+                is_tutorial = "(tutorial)" in subj.lower() or "(tute)" in subj.lower()
+                card_class = "subject-card-tute" if is_tutorial else "subject-card-main"
+                
+                status_html = ""
+                if pct >= 80.0:
+                    status_html = f'''<div class="status-badge-safe">🟢 <b>Safe Zone</b> — You can miss {stats["safe_left"]} more classes without dropping below 80%.</div>'''
+                else:
+                    status_html = f'''<div class="status-badge-warning">🔴 <b>Attendance Warning</b> — Below 80% threshold! Attend remaining sessions carefully.</div>'''
+
+                st.markdown(f'''
+                    <div class="{card_class}">
+                        <div class="card-header-flex">
+                            <h3 class="subject-title">📖 {subj}</h3>
+                            <span class="{'badge-green' if pct >= 80.0 else 'badge-red'}">{pct:.1f}% Attendance</span>
+                        </div>
+                        <div class="metrics-grid">
+                            <div class="metric-item">
+                                <div class="metric-label">Total Conducted</div>
+                                <div class="metric-val">{stats["past_conducted"]} / {stats["total"]}</div>
+                            </div>
+                            <div class="metric-item">
+                                <div class="metric-label">Absences</div>
+                                <div class="metric-val">{stats["absences"]} Lectures</div>
+                            </div>
+                        </div>
+                        {status_html}
+                    </div>
+                ''', unsafe_allow_html=True)
+
+                if st.button(f"🔍 View History / Modify Absences for {subj}", key=f"modal_btn_{subj}", use_container_width=True):
+                    open_subject_modal(subj, cfg, username)
+
+# ---------------------------------------------------------
+# 6. AUTHENTICATION UI & ENTRY POINT
+# ---------------------------------------------------------
+def auth_page():
+    col1, col2, col3 = st.columns([1, 1.3, 1])
+    with col2:
+        st.markdown('<div style="height: 40px;"></div>', unsafe_allow_html=True)
+        st.markdown('''
+            <div class="auth-animated-card">
+                <div class="auth-header-box">
+                    <div class="auth-header-title">🎓 Academic Portal</div>
+                    <div class="auth-subtitle">Student Attendance & Timetable Management</div>
+                </div>
+        ''', unsafe_allow_html=True)
+
+        auth_tab1, auth_tab2 = st.tabs(["🔐 Login", "📝 Register"])
+
+        with auth_tab1:
+            st.markdown("### Welcome Back")
+            log_user = st.text_input("Username", key="log_user_input")
+            log_pass = st.text_input("Password", type="password", key="log_pass_input")
+            st.markdown('<div style="height: 10px;"></div>', unsafe_allow_html=True)
+            if st.button("Sign In", use_container_width=True, type="primary"):
+                if not log_user or not log_pass:
+                    st.error("Please enter both username and password.")
+                else:
+                    name = check_login_db(log_user, log_pass)
+                    if name:
+                        st.session_state['logged_in'] = True
+                        st.session_state['current_user'] = name
+                        st.session_state['current_username'] = log_user.strip().lower()
+                        st.success(f"Welcome back, {name}!")
+                        time.sleep(0.4)
+                        st.rerun()
+                    else:
+                        st.error("Invalid username or password.")
+
+        with auth_tab2:
+            st.markdown("### Create Account")
+            reg_name = st.text_input("Full Name", key="reg_name_input")
+            reg_phone = st.text_input("Phone Number", key="reg_phone_input")
+            reg_user = st.text_input("Choose Username", key="reg_user_input")
+            reg_pass = st.text_input("Choose Password", type="password", key="reg_pass_input")
+            st.markdown('<div style="height: 10px;"></div>', unsafe_allow_html=True)
+            if st.button("Register Account", use_container_width=True, type="primary"):
+                if not reg_name or not reg_phone or not reg_user or not reg_pass:
+                    st.error("Please fill in all registration fields.")
+                else:
+                    success = register_user_db(reg_user, reg_name, reg_phone, reg_pass)
+                    if success:
+                        st.success("Registration successful! You can now log in.")
+                    else:
+                        st.error("Username already exists. Choose a different one.")
+
+        st.markdown('</div>', unsafe_allow_html=True)
+
+# Main Execution Routing
+if not st.session_state['logged_in']:
+    auth_page()
+else:
+    main_app()
+
+st.markdown('''
+    <div class="app-footer">
+        Academic Portal & Attendance Tracker • Optimized for Desktop & Mobile
+    </div>
+''', unsafe_allow_html=True)
