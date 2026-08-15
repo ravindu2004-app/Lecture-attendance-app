@@ -114,6 +114,41 @@ def save_absents_db(username, absent_set):
 
 
 # ---------------------------------------------------------
+# MOBILE TOUCH-FRIENDLY TIME PICKER HELPER
+# ---------------------------------------------------------
+def mobile_time_picker(label, key_prefix, default_time=datetime.time(9, 0)):
+    st.write(f"**{label}**")
+    c1, c2, c3 = st.columns(3)
+    
+    # Hour selection (1-12)
+    default_h12 = default_time.hour % 12
+    default_h12 = 12 if default_h12 == 0 else default_h12
+    hours = [f"{i:02d}" for i in range(1, 13)]
+    
+    # Minute selection (00-59)
+    minutes = [f"{i:02d}" for i in range(60)]
+    
+    # AM/PM selection
+    ampm_list = ["AM", "PM"]
+    default_ampm = "PM" if default_time.hour >= 12 else "AM"
+    
+    with c1:
+        selected_h = st.selectbox("Hour", hours, index=hours.index(f"{default_h12:02d}"), key=f"{key_prefix}_h")
+    with c2:
+        selected_m = st.selectbox("Min", minutes, index=minutes.index(f"{default_time.minute:02d}"), key=f"{key_prefix}_m")
+    with c3:
+        selected_ampm = st.selectbox("Format", ampm_list, index=ampm_list.index(default_ampm), key=f"{key_prefix}_ap")
+    
+    h24 = int(selected_h)
+    if selected_ampm == "PM" and h24 != 12:
+        h24 += 12
+    elif selected_ampm == "AM" and h24 == 12:
+        h24 = 0
+        
+    return datetime.time(h24, int(selected_m))
+
+
+# ---------------------------------------------------------
 # 1. PAGE CONFIGURATION & STYLING
 # ---------------------------------------------------------
 st.set_page_config(page_title="Lecture Attendance Tracker", page_icon="🎓", layout="wide")
@@ -154,34 +189,6 @@ st.markdown("""
     padding: 12px;
     border: 1px solid rgba(255, 255, 255, 0.1);
     margin-bottom: 10px;
-}
-
-/* Mobile Touch Optimization for Streamlit Time Input Wrappers */
-div[data-baseweb="timepicker"], 
-div[data-baseweb="timepicker"] * {
-    pointer-events: auto !important;
-    touch-action: manipulation !important;
-}
-
-div[data-baseweb="select"] input {
-    touch-action: manipulation !important;
-}
-
-input[type="time"] {
-    pointer-events: auto !important;
-    touch-action: manipulation !important;
-    -webkit-appearance: auto !important;
-    position: relative !important;
-    z-index: 9999 !important;
-}
-
-input[type="time"]::-webkit-calendar-picker-indicator {
-    pointer-events: auto !important;
-    opacity: 1 !important;
-    cursor: pointer !important;
-    display: block !important;
-    width: 25px;
-    height: 25px;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -326,14 +333,15 @@ def main_app():
                 day_list = cfg["custom_timetable"].get(day, [])
                 updated_day_list = []
                 for idx, slot in enumerate(day_list):
-                    col_subj, col_s_time, col_e_time, col_del = st.columns([3, 2, 2, 1])
+                    col_subj, col_s_time, col_e_time, col_del = st.columns([3, 3, 3, 1])
                     with col_subj:
                         s_name = st.text_input(f"Subject Name", value=slot["subject"], key=f"s_{day}_{idx}")
                     with col_s_time:
-                        s_time = st.time_input(f"Start Time", value=slot["start_time"], key=f"st_{day}_{idx}")
+                        s_time = mobile_time_picker("Start Time", key_prefix=f"st_{day}_{idx}", default_time=slot["start_time"])
                     with col_e_time:
-                        e_time = st.time_input(f"End Time", value=slot["end_time"], key=f"et_{day}_{idx}")
+                        e_time = mobile_time_picker("End Time", key_prefix=f"et_{day}_{idx}", default_time=slot["end_time"])
                     with col_del:
+                        st.write(" ")
                         st.write(" ")
                         if st.button("❌", key=f"del_{day}_{idx}"):
                             day_list.pop(idx)
@@ -365,14 +373,13 @@ def main_app():
             st.rerun()
 
     # ---------------------------------------------------------
-    # NAVIGATION 2: CANCEL / EXTRA LECTURES (SELECT FROM DROPDOWN)
+    # NAVIGATION 2: CANCEL / EXTRA LECTURES
     # ---------------------------------------------------------
     elif nav_mode == "🚫 Cancel / Extra Lectures":
         st.markdown("<h1 style='color: white;'>🛠️ Manage Cancelled & Extra Lectures</h1>", unsafe_allow_html=True)
         
         tab_cancel, tab_extra = st.tabs(["🚫 Cancel a Scheduled Lecture", "➕ Add an Extra Lecture"])
         
-        # Unique list of subjects from timetable
         all_subjects = sorted(list(set(l["subject"] for day in cfg["custom_timetable"] for l in cfg["custom_timetable"][day])))
 
         # TAB 1: CANCEL LECTURE
@@ -384,7 +391,6 @@ def main_app():
                 c_date = st.date_input("Select Cancel Date:", min_value=cfg["start_date"], max_value=cfg["end_date"], key="c_date")
                 c_day_name = c_date.strftime("%A")
                 
-                # Dynamic Filter: Get subjects scheduled on selected day
                 day_lectures = cfg["custom_timetable"].get(c_day_name, [])
                 day_subjects = sorted(list(set(l["subject"] for l in day_lectures)))
 
@@ -422,13 +428,13 @@ def main_app():
                 st.warning("Please setup your timetable first in Timetable Setup!")
             else:
                 e_date = st.date_input("Select Extra Lecture Date:", min_value=cfg["start_date"], max_value=cfg["end_date"], key="e_date")
-                
-                # Select subject directly from existing Timetable subjects
                 e_subj = st.selectbox("Select Subject for Extra Class:", options=all_subjects, key="e_subj")
                 
                 col_st, col_et = st.columns(2)
-                e_st = col_st.time_input("Start Time", value=datetime.time(9, 0), key="e_st")
-                e_et = col_et.time_input("End Time", value=datetime.time(11, 0), key="e_et")
+                with col_st:
+                    e_st = mobile_time_picker("Start Time", key_prefix="e_st", default_time=datetime.time(9, 0))
+                with col_et:
+                    e_et = mobile_time_picker("End Time", key_prefix="e_et", default_time=datetime.time(11, 0))
 
                 if st.button("➕ Schedule Extra Lecture", type="primary"):
                     e_date_str = e_date.strftime("%Y-%m-%d")
