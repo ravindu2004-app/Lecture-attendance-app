@@ -655,7 +655,8 @@ def open_subject_modal(subj, cfg, username):
     st.markdown(f"### 📚 Subject: **{subj}**")
     st.write("---")
     
-    subj_absents = [r for r in st.session_state['absent_records'] if f"_{subj}_" in r]
+    current_absents = st.session_state.get('absent_records', set())
+    subj_absents = [r for r in current_absents if f"_{subj}_" in r]
     
     if not subj_absents:
         st.success("🎉 Perfect Attendance! No absent lectures recorded for this subject.")
@@ -673,8 +674,6 @@ def open_subject_modal(subj, cfg, username):
                 if st.button("Mark Present", key=f"modal_rm_{abs_key}", type="primary"):
                     st.session_state['absent_records'].discard(abs_key)
                     save_absents_db(username, st.session_state['absent_records'])
-                    st.toast("Updated to Present!", icon="✅")
-                    time.sleep(0.4)
                     st.rerun()
             st.markdown('</div>', unsafe_allow_html=True)
 
@@ -1085,7 +1084,7 @@ def main_app():
     ''', unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# 5. AUTHENTICATION ENTRY POINT WITH ANIMATIONS
+# 5. AUTHENTICATION ENTRY POINT WITH HTML FORM (AUTO-FILL SUPPORT)
 # ---------------------------------------------------------
 if not st.session_state['logged_in']:
     st.markdown("<br>", unsafe_allow_html=True)
@@ -1105,11 +1104,17 @@ if not st.session_state['logged_in']:
 
         if auth_choice == "Login":
             st.markdown('<div style="animation: fadeInUp 0.4s ease-out;">', unsafe_allow_html=True)
-            u_input = st.text_input("Username", key="login_u", placeholder="Enter your username")
-            p_input = st.text_input("Password", type="password", key="login_p", placeholder="Enter your password")
-            st.write(" ")
             
-            if st.button("Sign In to Portal", type="primary", use_container_width=True):
+            # Form using Streamlit st.form to enable browser credential saving & autofill
+            with st.form("login_form", clear_on_submit=False):
+                u_input = st.text_input("Username", key="login_u", placeholder="Enter your username", autocomplete="username")
+                p_input = st.text_input("Password", type="password", key="login_p", placeholder="Enter your password", autocomplete="current-password")
+                remember_me = st.checkbox("Remember My Password", value=True)
+                st.write(" ")
+                
+                submit_login = st.form_submit_button("Sign In to Portal", type="primary", use_container_width=True)
+
+            if submit_login:
                 if u_input and p_input:
                     name = check_login_db(u_input, p_input)
                     if name:
@@ -1127,13 +1132,16 @@ if not st.session_state['logged_in']:
 
         else:
             st.markdown('<div style="animation: fadeInUp 0.4s ease-out;">', unsafe_allow_html=True)
-            reg_name = st.text_input("Full Name", key="reg_name", placeholder="John Doe")
-            reg_phone = st.text_input("Phone Number", key="reg_phone", placeholder="+94 XX XXX XXXX")
-            reg_u = st.text_input("Create Username", key="reg_u", placeholder="Choose a unique username")
-            reg_p = st.text_input("Create Password", type="password", key="reg_p", placeholder="Choose a strong password")
-            st.write(" ")
-            
-            if st.button("Create Student Account", type="primary", use_container_width=True):
+            with st.form("register_form", clear_on_submit=False):
+                reg_name = st.text_input("Full Name", key="reg_name", placeholder="John Doe", autocomplete="name")
+                reg_phone = st.text_input("Phone Number", key="reg_phone", placeholder="+94 XX XXX XXXX", autocomplete="tel")
+                reg_u = st.text_input("Create Username", key="reg_u", placeholder="Choose a unique username", autocomplete="username")
+                reg_p = st.text_input("Create Password", type="password", key="reg_p", placeholder="Choose a strong password", autocomplete="new-password")
+                st.write(" ")
+                
+                submit_reg = st.form_submit_button("Create Student Account", type="primary", use_container_width=True)
+
+            if submit_reg:
                 if reg_name and reg_phone and reg_u and reg_p:
                     success = register_user_db(reg_u, reg_name, reg_phone, reg_p)
                     if success:
