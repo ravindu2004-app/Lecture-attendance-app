@@ -28,7 +28,7 @@ def init_db():
     ''')
     c.execute('''
         CREATE TABLE IF NOT EXISTS absent_records (
-            username TEXT PRIMARY KEY,
+            username TEXT,
             record_key TEXT
         )
     ''')
@@ -66,45 +66,110 @@ def load_user_config_db(username):
     c.execute("SELECT config_json FROM user_configs WHERE username=?", (clean_u,))
     row = c.fetchone()
     conn.close()
+    
+    default_timetable = {day: [] for day in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]}
+    default_sem_structure = {
+        "start_date": datetime.date.today(),
+        "end_date": datetime.date.today() + datetime.timedelta(days=120),
+        "mid_exam_dates": [],
+        "subjects": [],
+        "timetable": default_timetable
+    }
+    
+    default_config = {
+        "setup_complete": False,
+        "selected_year": "Year 1",
+        "selected_semester": "Semester 1",
+        "custom_timetables": {
+            "Year 1": {"Semester 1": dict(default_sem_structure), "Semester 2": dict(default_sem_structure)},
+            "Year 2": {"Semester 1": dict(default_sem_structure), "Semester 2": dict(default_sem_structure)},
+            "Year 3": {"Semester 1": dict(default_sem_structure), "Semester 2": dict(default_sem_structure)},
+            "Year 4": {"Semester 1": dict(default_sem_structure), "Semester 2": dict(default_sem_structure)}
+        },
+        "cancelled_lectures": [],
+        "extra_lectures": []
+    }
+
     if row:
-        data = json.loads(row[0])
+        try:
+            data = json.loads(row[0])
+        except Exception:
+            data = {}
+            
+        # Ensure robust key presence to completely avoid KeyErrors
         if "custom_timetables" not in data:
-            old_timetable = data.get("custom_timetable", {day: [] for day in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]})
+            old_timetable = data.get("custom_timetable", default_timetable)
             old_subjects = data.get("subjects_pool", sorted(list(set(l["subject"] for day in old_timetable for l in old_timetable[day]))))
             data["custom_timetables"] = {
                 "Year 1": {"Semester 1": {"start_date": data.get("start_date", datetime.date.today()), "end_date": data.get("end_date", datetime.date.today() + datetime.timedelta(days=120)), "subjects": old_subjects, "timetable": old_timetable},
-                           "Semester 2": {"start_date": data.get("start_date", datetime.date.today()), "end_date": data.get("end_date", datetime.date.today() + datetime.timedelta(days=120)), "subjects": [], "timetable": {day: [] for day in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]}}},
-                "Year 2": {"Semester 1": {"start_date": data.get("start_date", datetime.date.today()), "end_date": data.get("end_date", datetime.date.today() + datetime.timedelta(days=120)), "subjects": [], "timetable": {day: [] for day in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]}},
-                           "Semester 2": {"start_date": data.get("start_date", datetime.date.today()), "end_date": data.get("end_date", datetime.date.today() + datetime.timedelta(days=120)), "subjects": [], "timetable": {day: [] for day in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]}}},
-                "Year 3": {"Semester 1": {"start_date": data.get("start_date", datetime.date.today()), "end_date": data.get("end_date", datetime.date.today() + datetime.timedelta(days=120)), "subjects": [], "timetable": {day: [] for day in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]}},
-                           "Semester 2": {"start_date": data.get("start_date", datetime.date.today()), "end_date": data.get("end_date", datetime.date.today() + datetime.timedelta(days=120)), "subjects": [], "timetable": {day: [] for day in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]}}},
-                "Year 4": {"Semester 1": {"start_date": data.get("start_date", datetime.date.today()), "end_date": data.get("end_date", datetime.date.today() + datetime.timedelta(days=120)), "subjects": [], "timetable": {day: [] for day in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]}},
-                           "Semester 2": {"start_date": data.get("start_date", datetime.date.today()), "end_date": data.get("end_date", datetime.date.today() + datetime.timedelta(days=120)), "subjects": [], "timetable": {day: [] for day in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]}}}
+                           "Semester 2": {"start_date": data.get("start_date", datetime.date.today()), "end_date": data.get("end_date", datetime.date.today() + datetime.timedelta(days=120)), "subjects": [], "timetable": dict(default_timetable)}},
+                "Year 2": {"Semester 1": {"start_date": data.get("start_date", datetime.date.today()), "end_date": data.get("end_date", datetime.date.today() + datetime.timedelta(days=120)), "subjects": [], "timetable": dict(default_timetable)},
+                           "Semester 2": {"start_date": data.get("start_date", datetime.date.today()), "end_date": data.get("end_date", datetime.date.today() + datetime.timedelta(days=120)), "subjects": [], "timetable": dict(default_timetable)}},
+                "Year 3": {"Semester 1": {"start_date": data.get("start_date", datetime.date.today()), "end_date": data.get("end_date", datetime.date.today() + datetime.timedelta(days=120)), "subjects": [], "timetable": dict(default_timetable)},
+                           "Semester 2": {"start_date": data.get("start_date", datetime.date.today()), "end_date": data.get("end_date", datetime.date.today() + datetime.timedelta(days=120)), "subjects": [], "timetable": dict(default_timetable)}},
+                "Year 4": {"Semester 1": {"start_date": data.get("start_date", datetime.date.today()), "end_date": data.get("end_date", datetime.date.today() + datetime.timedelta(days=120)), "subjects": [], "timetable": dict(default_timetable)},
+                           "Semester 2": {"start_date": data.get("start_date", datetime.date.today()), "end_date": data.get("end_date", datetime.date.today() + datetime.timedelta(days=120)), "subjects": [], "timetable": dict(default_timetable)}}
             }
+        
+        # Verify years & semesters exist
+        for yr in ["Year 1", "Year 2", "Year 3", "Year 4"]:
+            if yr not in data["custom_timetables"]:
+                data["custom_timetables"][yr] = {"Semester 1": dict(default_sem_structure), "Semester 2": dict(default_sem_structure)}
+            for sem in ["Semester 1", "Semester 2"]:
+                if sem not in data["custom_timetables"][yr]:
+                    data["custom_timetables"][yr][sem] = dict(default_sem_structure)
+                else:
+                    for k_sec, v_sec in default_sem_structure.items():
+                        if k_sec not in data["custom_timetables"][yr][sem]:
+                            data["custom_timetables"][yr][sem][k_sec] = v_sec
+
+        if "selected_year" not in data or data["selected_year"] not in data["custom_timetables"]:
             data["selected_year"] = "Year 1"
+        if "selected_semester" not in data or data["selected_semester"] not in data["custom_timetables"][data["selected_year"]]:
             data["selected_semester"] = "Semester 1"
 
+        # Parse dates and times
         for yr in data["custom_timetables"]:
             for sem in data["custom_timetables"][yr]:
                 sem_data = data["custom_timetables"][yr][sem]
-                sem_data["start_date"] = datetime.datetime.strptime(str(sem_data["start_date"]), "%Y-%m-%d").date()
-                sem_data["end_date"] = datetime.datetime.strptime(str(sem_data["end_date"]), "%Y-%m-%d").date()
+                if isinstance(sem_data.get("start_date"), str):
+                    try:
+                        sem_data["start_date"] = datetime.datetime.strptime(sem_data["start_date"], "%Y-%m-%d").date()
+                    except:
+                        sem_data["start_date"] = datetime.date.today()
+                if isinstance(sem_data.get("end_date"), str):
+                    try:
+                        sem_data["end_date"] = datetime.datetime.strptime(sem_data["end_date"], "%Y-%m-%d").date()
+                    except:
+                        sem_data["end_date"] = datetime.date.today() + datetime.timedelta(days=120)
                 
-                for day in sem_data["timetable"]:
+                for day in sem_data.get("timetable", {}):
                     for session in sem_data["timetable"][day]:
-                        if isinstance(session["start_time"], str):
-                            session["start_time"] = datetime.datetime.strptime(session["start_time"], "%H:%M:%S").time()
-                        if isinstance(session["end_time"], str):
-                            session["end_time"] = datetime.datetime.strptime(session["end_time"], "%H:%M:%S").time()
+                        if isinstance(session.get("start_time"), str):
+                            try:
+                                session["start_time"] = datetime.datetime.strptime(session["start_time"], "%H:%M:%S").time()
+                            except:
+                                session["start_time"] = datetime.time(9, 0)
+                        if isinstance(session.get("end_time"), str):
+                            try:
+                                session["end_time"] = datetime.datetime.strptime(session["end_time"], "%H:%M:%S").time()
+                            except:
+                                session["end_time"] = datetime.time(11, 0)
                 
         for ext in data.get("extra_lectures", []):
-            if isinstance(ext["start_time"], str):
-                ext["start_time"] = datetime.datetime.strptime(ext["start_time"], "%H:%M:%S").time()
-            if isinstance(ext["end_time"], str):
-                ext["end_time"] = datetime.datetime.strptime(ext["end_time"], "%H:%M:%S").time()
+            if isinstance(ext.get("start_time"), str):
+                try:
+                    ext["start_time"] = datetime.datetime.strptime(ext["start_time"], "%H:%M:%S").time()
+                except:
+                    ext["start_time"] = datetime.time(9, 0)
+            if isinstance(ext.get("end_time"), str):
+                try:
+                    ext["end_time"] = datetime.datetime.strptime(ext["end_time"], "%H:%M:%S").time()
+                except:
+                    ext["end_time"] = datetime.time(11, 0)
                 
         return data
-    return None
+    return default_config
 
 def save_user_config_db(username, config):
     conn = sqlite3.connect('attendance_app.db')
@@ -196,7 +261,6 @@ html, body, [class*="css"] {
     }
 }
 
-/* AUTHENTICATION STYLING MATCHING THE REFERENCE IMAGE */
 .auth-container {
     max-width: 650px;
     margin: 40px auto;
@@ -240,7 +304,6 @@ html, body, [class*="css"] {
     backdrop-filter: blur(20px);
 }
 
-/* CUSTOM STYLING FOR SUBMIT BUTTON TO MATCH THE RED ACCENT IN THE SCREENSHOT */
 div.stButton > button[kind="primary"] {
     background: linear-gradient(135deg, #fb4b52 0%, #f43f5e 100%) !important;
     border: none !important;
@@ -257,7 +320,6 @@ div.stButton > button[kind="primary"]:hover {
     box-shadow: 0 6px 20px rgba(244, 63, 94, 0.5) !important;
 }
 
-/* MAIN DASHBOARD HEADER */
 .dashboard-header {
     background: linear-gradient(135deg, rgba(17, 24, 39, 0.8) 0%, rgba(15, 23, 42, 0.95) 100%);
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -277,64 +339,6 @@ div.stButton > button[kind="primary"]:hover {
     -webkit-text-fill-color: transparent;
     margin: 0 !important;
     letter-spacing: -0.5px;
-}
-
-.insights-banner-page {
-    background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
-    border: 1px solid rgba(56, 189, 248, 0.3);
-    border-radius: 20px;
-    padding: 28px;
-    margin-bottom: 24px;
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 20px;
-    align-items: center;
-    backdrop-filter: blur(16px);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-    animation: fadeInUp 0.45s ease-out;
-}
-
-.insight-item-page {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    background: rgba(255, 255, 255, 0.02);
-    padding: 16px 20px;
-    border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.insight-icon-page {
-    font-size: 24px;
-    background: rgba(56, 189, 248, 0.12);
-    padding: 12px;
-    border-radius: 14px;
-    color: #38bdf8;
-    border: 1px solid rgba(56, 189, 248, 0.25);
-    flex-shrink: 0;
-}
-
-.insight-label-page {
-    font-size: 11px;
-    color: #94a3b8;
-    text-transform: uppercase;
-    font-weight: 700;
-    letter-spacing: 0.6px;
-    margin-bottom: 2px;
-}
-
-.insight-val-page {
-    font-size: 20px;
-    font-weight: 800;
-    color: #f8fafc;
-}
-
-@media (max-width: 768px) {
-    .insights-banner-page {
-        grid-template-columns: 1fr;
-        gap: 14px;
-        padding: 18px;
-    }
 }
 
 .tracker-card {
@@ -494,6 +498,17 @@ if 'nav_mode' not in st.session_state:
 def get_active_semester_data(cfg):
     yr = cfg.get("selected_year", "Year 1")
     sem = cfg.get("selected_semester", "Semester 1")
+    if yr not in cfg.get("custom_timetables", {}):
+        cfg["custom_timetables"][yr] = {}
+    if sem not in cfg["custom_timetables"][yr]:
+        default_timetable = {day: [] for day in DAYS_OF_WEEK}
+        cfg["custom_timetables"][yr][sem] = {
+            "start_date": datetime.date.today(),
+            "end_date": datetime.date.today() + datetime.timedelta(days=120),
+            "mid_exam_dates": [],
+            "subjects": [],
+            "timetable": default_timetable
+        }
     return cfg["custom_timetables"][yr][sem]
 
 def is_tutorial_subject(subj):
@@ -632,31 +647,7 @@ def main_app():
     user_display = st.session_state['current_user']
 
     if 'cfg' not in st.session_state:
-        loaded_cfg = load_user_config_db(username)
-        if loaded_cfg:
-            st.session_state['cfg'] = loaded_cfg
-        else:
-            default_timetable = {day: [] for day in DAYS_OF_WEEK}
-            default_sem_structure = {
-                "start_date": datetime.date.today(),
-                "end_date": datetime.date.today() + datetime.timedelta(days=120),
-                "mid_exam_dates": [],
-                "subjects": [],
-                "timetable": default_timetable
-            }
-            st.session_state['cfg'] = {
-                "setup_complete": False,
-                "selected_year": "Year 1",
-                "selected_semester": "Semester 1",
-                "custom_timetables": {
-                    "Year 1": {"Semester 1": dict(default_sem_structure), "Semester 2": dict(default_sem_structure)},
-                    "Year 2": {"Semester 1": dict(default_sem_structure), "Semester 2": dict(default_sem_structure)},
-                    "Year 3": {"Semester 1": dict(default_sem_structure), "Semester 2": dict(default_sem_structure)},
-                    "Year 4": {"Semester 1": dict(default_sem_structure), "Semester 2": dict(default_sem_structure)}
-                },
-                "cancelled_lectures": [],
-                "extra_lectures": []
-            }
+        st.session_state['cfg'] = load_user_config_db(username)
 
     if 'absent_records' not in st.session_state:
         st.session_state['absent_records'] = load_absents_db(username)
@@ -709,7 +700,7 @@ def main_app():
     nav_mode = st.session_state['nav_mode']
     sem_data = get_active_semester_data(cfg)
 
-    if not cfg["setup_complete"] or nav_mode == "⚙️ Timetable Setup":
+    if not cfg.get("setup_complete", False) or nav_mode == "⚙️ Timetable Setup":
         st.markdown(f'''
             <div class="dashboard-header">
                 <h1 class="dashboard-title">⚙️ Timetable Setup ({cfg["selected_year"]} - {cfg["selected_semester"]})</h1>
@@ -718,8 +709,8 @@ def main_app():
         ''', unsafe_allow_html=True)
         
         c1, c2 = st.columns(2)
-        start_d = c1.date_input("Semester Start Date", value=sem_data["start_date"], key=f"setup_start_{cfg['selected_year']}_{cfg['selected_semester']}")
-        end_d = c2.date_input("Semester End Date", value=sem_data["end_date"], key=f"setup_end_{cfg['selected_year']}_{cfg['selected_semester']}")
+        start_d = c1.date_input("Semester Start Date", value=sem_data.get("start_date", datetime.date.today()), key=f"setup_start_{cfg['selected_year']}_{cfg['selected_semester']}")
+        end_d = c2.date_input("Semester End Date", value=sem_data.get("end_date", datetime.date.today() + datetime.timedelta(days=120)), key=f"setup_end_{cfg['selected_year']}_{cfg['selected_semester']}")
 
         mid_dates = st.date_input("Select Mid-Exam Date Range", value=(start_d + datetime.timedelta(days=30), start_d + datetime.timedelta(days=36)), key=f"setup_mid_{cfg['selected_year']}_{cfg['selected_semester']}")
 
@@ -764,7 +755,7 @@ def main_app():
                     col_subj, col_s_time, col_e_time, col_del = st.columns([3, 3, 3, 1])
                     with col_subj:
                         sub_options = sem_data.get("subjects", [])
-                        current_sub = slot["subject"]
+                        current_sub = slot.get("subject", "")
                         if current_sub not in sub_options and current_sub != "":
                             sub_options = [current_sub] + sub_options
                         if not sub_options:
@@ -773,9 +764,9 @@ def main_app():
                         default_idx = sub_options.index(current_sub) if current_sub in sub_options else 0
                         s_name = st.selectbox(f"Subject Name", options=sub_options, index=default_idx, key=f"s_{day}_{idx}_{cfg['selected_year']}_{cfg['selected_semester']}")
                     with col_s_time:
-                        s_time = mobile_time_picker("Start Time", key_prefix=f"st_{day}_{idx}_{cfg['selected_year']}_{cfg['selected_semester']}", default_time=slot["start_time"])
+                        s_time = mobile_time_picker("Start Time", key_prefix=f"st_{day}_{idx}_{cfg['selected_year']}_{cfg['selected_semester']}", default_time=slot.get("start_time", datetime.time(9,0)))
                     with col_e_time:
-                        e_time = mobile_time_picker("End Time", key_prefix=f"et_{day}_{idx}_{cfg['selected_year']}_{cfg['selected_semester']}", default_time=slot["end_time"])
+                        e_time = mobile_time_picker("End Time", key_prefix=f"et_{day}_{idx}_{cfg['selected_year']}_{cfg['selected_semester']}", default_time=slot.get("end_time", datetime.time(11,0)))
                     with col_del:
                         st.write(" ")
                         st.write(" ")
@@ -816,7 +807,7 @@ def main_app():
             </div>
         ''', unsafe_allow_html=True)
 
-        all_subjects_calc = sorted(list(set(l["subject"] for day in sem_data["timetable"] for l in sem_data["timetable"][day])))
+        all_subjects_calc = sorted(list(set(l["subject"] for day in sem_data.get("timetable", {}) for l in sem_data["timetable"][day])))
         
         if not all_subjects_calc:
             st.info("No subjects found in the timetable for this semester. Please configure your timetable in the setup section.")
@@ -889,14 +880,14 @@ def main_app():
         ''', unsafe_allow_html=True)
         
         tab_cancel, tab_extra = st.tabs(["🚫 Cancel a Scheduled Lecture", "➕ Add an Extra Lecture"])
-        all_subjects = sorted(list(set(l["subject"] for day in sem_data["timetable"] for l in sem_data["timetable"][day])))
+        all_subjects = sorted(list(set(l["subject"] for day in sem_data.get("timetable", {}) for l in sem_data["timetable"][day])))
 
         with tab_cancel:
             st.subheader("Cancel a Lecture for a Specific Date")
             if not all_subjects:
                 st.warning("Please setup your timetable first in Timetable Setup!")
             else:
-                c_date = st.date_input("Select Cancel Date:", min_value=sem_data["start_date"], max_value=sem_data["end_date"], key="c_date")
+                c_date = st.date_input("Select Cancel Date:", min_value=sem_data.get("start_date", datetime.date.today()), max_value=sem_data.get("end_date", datetime.date.today() + datetime.timedelta(days=120)), key="c_date")
                 c_day_name = c_date.strftime("%A")
                 
                 day_lectures = sem_data["timetable"].get(c_day_name, [])
@@ -909,8 +900,8 @@ def main_app():
                     
                     if st.button("🚫 Cancel This Lecture", type="primary"):
                         c_date_str = c_date.strftime("%Y-%m-%d")
-                        if not any(c["subject"] == c_subj and c["date"] == c_date_str for c in cfg["cancelled_lectures"]):
-                            cfg["cancelled_lectures"].append({"subject": c_subj, "date": c_date_str})
+                        if not any(c["subject"] == c_subj and c["date"] == c_date_str for c in cfg.get("cancelled_lectures", [])):
+                            cfg.setdefault("cancelled_lectures", []).append({"subject": c_subj, "date": c_date_str})
                             save_user_config_db(username, cfg)
                             st.success(f"Successfully cancelled {c_subj} on {c_date_str}!")
                             time.sleep(0.5)
@@ -924,7 +915,7 @@ def main_app():
                 st.warning("Please setup your timetable first in Timetable Setup!")
             else:
                 e_subj = st.selectbox("Select Subject:", options=all_subjects, key="e_subj")
-                e_date = st.date_input("Select Date:", min_value=sem_data["start_date"], max_value=sem_data["end_date"], key="e_date")
+                e_date = st.date_input("Select Date:", min_value=sem_data.get("start_date", datetime.date.today()), max_value=sem_data.get("end_date", datetime.date.today() + datetime.timedelta(days=120)), key="e_date")
                 e_st = mobile_time_picker("Start Time", key_prefix="e_st", default_time=datetime.time(9, 0))
                 e_et = mobile_time_picker("End Time", key_prefix="e_et", default_time=datetime.time(11, 0))
 
@@ -1001,8 +992,8 @@ def main_app():
                     rec_key = f"{d_str}_{subj}_{slot_index_in_subj}"
                     is_absent = rec_key in st.session_state['absent_records']
                     
-                    st_t = slot["start_time"].strftime("%I:%M %p")
-                    end_t = slot["end_time"].strftime("%I:%M %p")
+                    st_t = slot["start_time"].strftime("%I:%M %p") if isinstance(slot["start_time"], datetime.time) else "09:00 AM"
+                    end_t = slot["end_time"].strftime("%I:%M %p") if isinstance(slot["end_time"], datetime.time) else "11:00 AM"
                     
                     is_tute = is_tutorial_subject(subj)
                     card_class = "subject-card-tute" if is_tute else "subject-card-main"
@@ -1035,7 +1026,7 @@ def main_app():
                     st.markdown('</div>', unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# 5. AUTHENTICATION UI & ENTRYPOINT (MATCHING SCREENSHOT DESIGN)
+# 5. AUTHENTICATION UI & ENTRYPOINT
 # ---------------------------------------------------------
 def auth_screen():
     query_params = st.query_params
