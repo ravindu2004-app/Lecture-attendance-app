@@ -143,7 +143,7 @@ def mobile_time_picker(label, key_prefix, default_time=datetime.time(9, 0)):
 
 
 # ---------------------------------------------------------
-# 1. PAGE CONFIGURATION & CUSTOM CARDS STYLING
+# 1. PAGE CONFIGURATION & ADVANCED STYLING
 # ---------------------------------------------------------
 st.set_page_config(page_title="Lecture Attendance Tracker", page_icon="🎓", layout="wide")
 
@@ -158,10 +158,83 @@ html, body, [class*="css"] {
 .stApp {
     background: #090d16;
     background-image: 
-        radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.12) 0px, transparent 50%),
-        radial-gradient(at 100% 100%, rgba(147, 51, 234, 0.1) 0px, transparent 50%);
+        radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(147, 51, 234, 0.12) 0px, transparent 50%);
 }
 
+/* APP HERO & AUTH CONTAINER */
+.auth-hero-title {
+    font-size: 38px !important;
+    font-weight: 800 !important;
+    background: linear-gradient(135deg, #60a5fa 0%, #c084fc 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px !important;
+    letter-spacing: -1px;
+}
+
+.auth-hero-desc {
+    color: #94a3b8;
+    font-size: 15px;
+    line-height: 1.6;
+    margin-bottom: 25px;
+}
+
+.feature-pill {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    padding: 14px 18px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.feature-pill-icon {
+    font-size: 22px;
+    background: rgba(59, 130, 246, 0.12);
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(59, 130, 246, 0.25);
+}
+
+.feature-pill-text {
+    color: #e2e8f0;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* HIGH-END GLASSMORPHIC AUTH CARD */
+.auth-glass-card {
+    background: linear-gradient(145deg, rgba(30, 41, 59, 0.65) 0%, rgba(15, 23, 42, 0.85) 100%);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 28px;
+    padding: 35px 30px;
+    box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.6), 
+                0 0 40px rgba(59, 130, 246, 0.08);
+}
+
+.auth-card-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #f8fafc;
+    margin-bottom: 4px;
+}
+
+.auth-card-subtitle {
+    font-size: 13px;
+    color: #94a3b8;
+    margin-bottom: 20px;
+}
+
+/* DASHBOARD & SUBJECT CARDS STYLING */
 .dashboard-header {
     background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%);
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -181,7 +254,6 @@ html, body, [class*="css"] {
     letter-spacing: -0.5px;
 }
 
-/* CUSTOM MODERN SUBJECT CARD STYLES */
 .subject-card-main {
     background: linear-gradient(145deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.8) 100%);
     border: 1px solid rgba(59, 130, 246, 0.25);
@@ -265,15 +337,6 @@ html, body, [class*="css"] {
     font-size: 15px;
     font-weight: 700;
     color: #e2e8f0;
-}
-
-.auth-card {
-    background: rgba(15, 23, 42, 0.65);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 24px;
-    padding: 40px;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
 }
 
 .holiday-card {
@@ -502,7 +565,7 @@ def open_subject_modal(subj, cfg, username):
 
 
 # ---------------------------------------------------------
-# 4. MAIN DASHBOARD & APPLICATION LOGIC
+# 4. MAIN DASHBOARD APPLICATION
 # ---------------------------------------------------------
 def main_app():
     username = st.session_state['current_username']
@@ -562,7 +625,7 @@ def main_app():
 
     nav_mode = st.session_state['nav_mode']
 
-    # STEP 1: INITIAL SETUP IF NOT COMPLETED
+    # TIMETABLE SETUP
     if not cfg["setup_complete"] or nav_mode == "⚙️ Timetable Setup":
         st.markdown('''
             <div class="dashboard-header">
@@ -625,7 +688,7 @@ def main_app():
             time.sleep(0.5)
             st.rerun()
 
-    # NAVIGATION 2: CANCEL / EXTRA LECTURES
+    # CANCEL / EXTRA LECTURES
     elif nav_mode == "🚫 Cancel / Extra Lectures":
         st.markdown('''
             <div class="dashboard-header">
@@ -635,7 +698,6 @@ def main_app():
         ''', unsafe_allow_html=True)
         
         tab_cancel, tab_extra = st.tabs(["🚫 Cancel a Scheduled Lecture", "➕ Add an Extra Lecture"])
-        
         all_subjects = sorted(list(set(l["subject"] for day in cfg["custom_timetable"] for l in cfg["custom_timetable"][day])))
 
         with tab_cancel:
@@ -653,7 +715,6 @@ def main_app():
                     st.info(f"No regular lectures scheduled on {c_day_name}s.")
                 else:
                     c_subj = st.selectbox("Select Subject to Cancel:", options=day_subjects, key="c_subj")
-                    
                     if st.button("🚫 Cancel This Lecture", type="primary"):
                         c_date_str = c_date.strftime("%Y-%m-%d")
                         if not any(c["subject"] == c_subj and c["date"] == c_date_str for c in cfg["cancelled_lectures"]):
@@ -717,7 +778,7 @@ def main_app():
             else:
                 st.info("No extra lectures scheduled.")
 
-    # NAVIGATION 1: DAILY ATTENDANCE & SUBJECT PROGRESS
+    # DAILY ATTENDANCE & CARDS
     elif nav_mode == "🎓 Daily Attendance":
         st.markdown('''
             <div class="dashboard-header">
@@ -791,14 +852,12 @@ def main_app():
                 main_subjects = [s for s in all_subjects if not ("tutorial" in s.lower() or "tute" in s.lower())]
                 tutorial_subjects = [s for s in all_subjects if ("tutorial" in s.lower() or "tute" in s.lower())]
 
-                # REDESIGNED MODERN CARD RENDERING FUNCTION
                 def render_redesigned_subject_card(subj, is_tute=False):
                     stats = calculate_subject_stats(subj, cfg, st.session_state['absent_records'])
                     card_class = "subject-card-tute" if is_tute else "subject-card-main"
                     badge_class = "badge-green" if stats['percentage'] >= 80 else "badge-red"
                     icon = "📝" if is_tute else "📚"
 
-                    # Card Header HTML
                     st.markdown(f'''
                         <div class="{card_class}">
                             <div class="card-header-flex">
@@ -826,7 +885,6 @@ def main_app():
                         </div>
                     ''', unsafe_allow_html=True)
 
-                    # Progress Bar & Alerts
                     st.progress(min(1.0, stats['percentage'] / 100.0))
 
                     if stats['safe_left'] > 0:
@@ -852,7 +910,6 @@ def main_app():
                     for subj in tutorial_subjects:
                         render_redesigned_subject_card(subj, is_tute=True)
 
-    # FOOTER ADDITION (ALL RIGHTS RESERVED)
     st.markdown('''
         <div class="footer-text">
             © 2026 Lecture Attendance Tracker System. All Rights Reserved.
@@ -861,69 +918,112 @@ def main_app():
 
 
 # ---------------------------------------------------------
-# 5. AUTHENTICATION SYSTEM (LOGIN / REGISTER)
+# 5. REDESIGNED AUTHENTICATION INTERFACE (LOGIN / REGISTER)
 # ---------------------------------------------------------
 def auth_interface():
-    st.markdown("<h1 style='text-align: center; color: white; margin-bottom: 25px;'>🎓 Lecture Attendance App</h1>", unsafe_allow_html=True)
+    # Spacing from top
+    st.write(" ")
+    st.write(" ")
     
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("🔑 Login Mode", use_container_width=True, type="primary" if st.session_state['auth_mode'] == "Login" else "secondary"):
-            st.session_state['auth_mode'] = "Login"
-            st.rerun()
-    with col2:
-        if st.button("📝 Register Mode", use_container_width=True, type="primary" if st.session_state['auth_mode'] == "Register" else "secondary"):
-            st.session_state['auth_mode'] = "Register"
-            st.rerun()
+    col_hero, col_auth = st.columns([1.1, 1], gap="large")
 
-    if st.session_state['auth_mode'] == "Login":
-        st.markdown('<div class="auth-card">', unsafe_allow_html=True)
-        st.subheader("Login to Your Account")
-        st.markdown("<p style='color: #94a3b8; font-size: 15px; margin-bottom: 20px;'>👋 Hi Welcome! Please login to your account</p>", unsafe_allow_html=True)
+    # LEFT COLUMN: APP HERO & FEATURE HIGHLIGHTS
+    with col_hero:
+        st.markdown('<h1 class="auth-hero-title">🎓 Attendance Tracker</h1>', unsafe_allow_html=True)
+        st.markdown('''
+            <p class="auth-hero-desc">
+                Streamline your university lecture tracking, monitor strict 80% criteria, and manage your semester timetable effortlessly.
+            </p>
+        ''', unsafe_allow_html=True)
+
+        st.markdown('''
+            <div class="feature-pill">
+                <div class="feature-pill-icon">📊</div>
+                <div class="feature-pill-text">Smart 80% Attendance Threshold Calculator</div>
+            </div>
+            <div class="feature-pill">
+                <div class="feature-pill-icon">🇱🇰</div>
+                <div class="feature-pill-text">Automatic Sri Lankan Mercantile & Poya Holiday Calendar</div>
+            </div>
+            <div class="feature-pill">
+                <div class="feature-pill-icon">🔒</div>
+                <div class="feature-pill-text">Secure Local SQLite Encrypted User Storage</div>
+            </div>
+            <div class="feature-pill">
+                <div class="feature-pill-icon">📝</div>
+                <div class="feature-pill-text">Independent Tutorial & Main Subject Tracking</div>
+            </div>
+        ''', unsafe_allow_html=True)
+
+    # RIGHT COLUMN: MODERN GLASSMORPHIC AUTH CARD
+    with col_auth:
+        st.markdown('<div class="auth-glass-card">', unsafe_allow_html=True)
         
-        login_u = st.text_input("Username", key="l_user")
-        login_p = st.text_input("Password", type="password", key="l_pass")
-
-        if st.button("🚀 Sign In", use_container_width=True, type="primary"):
-            user_display_name = check_login_db(login_u, login_p)
-            if user_display_name:
-                st.session_state['logged_in'] = True
-                st.session_state['current_user'] = user_display_name
-                st.session_state['current_username'] = login_u.strip().lower()
-                st.toast("Login Successful!", icon="🎉")
-                time.sleep(0.5)
+        # Pill-Style Mode Switcher
+        c_switch1, c_switch2 = st.columns(2)
+        with c_switch1:
+            if st.button("🔑 Sign In", use_container_width=True, type="primary" if st.session_state['auth_mode'] == "Login" else "secondary"):
+                st.session_state['auth_mode'] = "Login"
                 st.rerun()
-            else:
-                st.error("Invalid Username or Password.")
-        st.markdown('</div>', unsafe_allow_html=True)
+        with c_switch2:
+            if st.button("✨ Register", use_container_width=True, type="primary" if st.session_state['auth_mode'] == "Register" else "secondary"):
+                st.session_state['auth_mode'] = "Register"
+                st.rerun()
 
-    else:
-        st.markdown('<div class="auth-card">', unsafe_allow_html=True)
-        st.subheader("Create a New Account")
-        st.markdown("<p style='color: #94a3b8; font-size: 15px; margin-bottom: 20px;'>👋 Hi Welcome! Please create your account below</p>", unsafe_allow_html=True)
-        
-        reg_fname = st.text_input("Full Name", placeholder="e.g. Kasun Perera")
-        reg_phone = st.text_input("Phone Number", placeholder="e.g. 0771234567")
-        reg_u = st.text_input("Username", placeholder="Choose a unique username")
-        reg_p = st.text_input("Password", type="password", key="reg_p")
-        reg_cp = st.text_input("Confirm Password", type="password", key="reg_cp")
+        st.write(" ")
 
-        if st.button("✨ Register Account", use_container_width=True, type="primary"):
-            clean_u = reg_u.strip()
-            if not reg_fname.strip() or not clean_u or not reg_p:
-                st.warning("Please fill in all details!")
-            elif reg_p != reg_cp:
-                st.error("Passwords do not match!")
-            else:
-                if register_user_db(clean_u, reg_fname, reg_phone, reg_p):
+        if st.session_state['auth_mode'] == "Login":
+            st.markdown('<div class="auth-card-title">Welcome Back!</div>', unsafe_allow_html=True)
+            st.markdown('<div class="auth-card-subtitle">Enter your credentials to access your portal.</div>', unsafe_allow_html=True)
+            
+            login_u = st.text_input("Username", key="l_user", placeholder="Enter your username")
+            login_p = st.text_input("Password", type="password", key="l_pass", placeholder="••••••••")
+
+            st.write(" ")
+            if st.button("🚀 Access Dashboard", use_container_width=True, type="primary"):
+                user_display_name = check_login_db(login_u, login_p)
+                if user_display_name:
                     st.session_state['logged_in'] = True
-                    st.session_state['current_user'] = reg_fname.strip()
-                    st.session_state['current_username'] = clean_u.lower()
-                    st.success("Account Created Successfully! Directing to App...")
-                    time.sleep(1)
+                    st.session_state['current_user'] = user_display_name
+                    st.session_state['current_username'] = login_u.strip().lower()
+                    st.toast("Login Successful!", icon="🎉")
+                    time.sleep(0.4)
                     st.rerun()
                 else:
-                    st.error("Username already taken! Try another one.")
+                    st.error("Invalid Username or Password.")
+
+        else:
+            st.markdown('<div class="auth-card-title">Create Account</div>', unsafe_allow_html=True)
+            st.markdown('<div class="auth-card-subtitle">Setup your student profile in less than a minute.</div>', unsafe_allow_html=True)
+            
+            reg_fname = st.text_input("Full Name", placeholder="e.g. Kasun Perera")
+            reg_phone = st.text_input("Phone Number", placeholder="e.g. 0771234567")
+            reg_u = st.text_input("Username", placeholder="Choose a unique username")
+            
+            c_p1, c_p2 = st.columns(2)
+            with c_p1:
+                reg_p = st.text_input("Password", type="password", key="reg_p", placeholder="••••••••")
+            with c_p2:
+                reg_cp = st.text_input("Confirm Password", type="password", key="reg_cp", placeholder="••••••••")
+
+            st.write(" ")
+            if st.button("✨ Create Student Account", use_container_width=True, type="primary"):
+                clean_u = reg_u.strip()
+                if not reg_fname.strip() or not clean_u or not reg_p:
+                    st.warning("Please fill in all details!")
+                elif reg_p != reg_cp:
+                    st.error("Passwords do not match!")
+                else:
+                    if register_user_db(clean_u, reg_fname, reg_phone, reg_p):
+                        st.session_state['logged_in'] = True
+                        st.session_state['current_user'] = reg_fname.strip()
+                        st.session_state['current_username'] = clean_u.lower()
+                        st.success("Account Created Successfully!")
+                        time.sleep(0.5)
+                        st.rerun()
+                    else:
+                        st.error("Username already taken! Try another one.")
+
         st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown('''
